@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobil Rehber: Yemek Siparişi Mimari & İşleyiş Simülatörü (Aydınlık Tema)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Mobile-first touch & scroll optimizations - LIGHT THEME */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            overscroll-behavior-y: none;
+        }
+
+        /* Interactive Clickable Acronym Layer (Tıklanabilir Kısaltma Katmanı - Aydınlık Tema) */
+        .term-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.12rem 0.48rem;
+            margin: 0.05rem 0.1rem;
+            border-radius: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1.25;
+            color: #0369a1;
+            background: #e0f2fe;
+            border: 1px dashed #0284c7;
+            box-shadow: 0 1px 3px rgba(2, 132, 199, 0.15);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            vertical-align: baseline;
+            position: relative;
+            z-index: 10;
+        }
+        .term-badge::after {
+            content: "\f05a";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 0.65rem;
+            color: #0284c7;
+            opacity: 0.95;
+        }
+        .term-badge:hover, .term-badge:active {
+            background: #bae6fd;
+            border-color: #0369a1;
+            color: #0c4a6e;
+            transform: scale(0.95);
+        }
+
+        /* Action Pulse Animations */
+        @keyframes pulseOrange {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.55); }
+            50% { box-shadow: 0 0 0 9px rgba(249, 115, 22, 0); }
+        }
+        .cta-pulse {
+            animation: pulseOrange 2s infinite;
+        }
+
+        @keyframes pulseEmerald {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+            50% { box-shadow: 0 0 0 9px rgba(16, 185, 129, 0); }
+        }
+        .cta-pulse-emerald {
+            animation: pulseEmerald 2s infinite;
+        }
+
+        @keyframes pulseBlue {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55); }
+            50% { box-shadow: 0 0 0 9px rgba(37, 99, 235, 0); }
+        }
+        .cta-pulse-blue {
+            animation: pulseBlue 2s infinite;
+        }
+
+        /* Realistic 80mm Thermal Paper Receipt with Serrated Zig-Zag Bottom */
+        .receipt-paper {
+            background: #fffbeb;
+            color: #0f172a;
+            position: relative;
+            box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.22);
+            border-left: 1px solid #cbd5e1;
+            border-right: 1px solid #cbd5e1;
+            transition: max-height 2.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+            overflow: hidden;
+        }
+        .receipt-paper::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background:
+                linear-gradient(135deg, transparent 33.33%, #e2e8f0 33.33%, #e2e8f0 66.67%, transparent 66.67%),
+                linear-gradient(45deg, transparent 33.33%, #e2e8f0 33.33%, #e2e8f0 66.67%, transparent 66.67%);
+            background-size: 12px 24px;
+        }
+
+        /* QR Camera Scanner Laser Line */
+        @keyframes scanLaser {
+            0% { top: 8%; opacity: 0.9; }
+            50% { top: 88%; opacity: 1; }
+            100% { top: 8%; opacity: 0.9; }
+        }
+        .laser-line {
+            position: absolute;
+            left: 6%;
+            right: 6%;
+            height: 2px;
+            background: #16a34a;
+            box-shadow: 0 0 12px 3px rgba(22, 163, 74, 0.8);
+            animation: scanLaser 1.6s ease-in-out infinite;
+        }
+
+        /* SambaPOS Custom Scroll & Tile Touch Feel */
+        .samba-tile {
+            user-select: none;
+            transition: transform 0.08s ease;
+        }
+        .samba-tile:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-[100dvh] flex flex-col justify-between bg-slate-100 text-slate-900 select-none">
+
+    <!-- ==================== MOBILE APP SHELL (CENTERED 480px MAX - LIGHT THEME) ==================== -->
+    <div class="w-full max-w-[480px] mx-auto min-h-[100dvh] flex flex-col bg-slate-50 border-x border-slate-200 shadow-xl relative">
+
+        <!-- ==================== 1. ULTRA-COMPACT MOBILE TOP HEADER ==================== -->
+        <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3.5 py-2.5 shadow-sm">
+            <div class="flex items-center justify-between gap-2">
+                <!-- App Title & Current Stage Pill -->
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-md shadow-orange-500/20 shrink-0">
+                        <i class="fa-solid fa-utensils text-white text-sm"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span id="headerStagePill" class="text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-300">AŞAMA 1/6</span>
+                            <span class="text-[10px] text-sky-700 font-semibold truncate"><i class="fa-solid fa-hand-pointer mr-0.5"></i>Kısaltmalara Dokun</span>
+                        </div>
+                        <h1 id="headerStageTitle" class="font-extrabold text-xs sm:text-sm text-slate-900 truncate mt-0.5">1. Müşteri Girişi & Doğrulama</h1>
+                    </div>
+                </div>
+
+                <!-- Right Controls: Sound & Reset -->
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button id="soundToggleBtn" onclick="toggleSound()" class="w-9 h-9 rounded-xl bg-slate-100 active:scale-95 border border-slate-200 flex items-center justify-center text-slate-700 transition" title="Ses Efektleri">
+                        <i id="soundIcon" class="fa-solid fa-volume-high text-emerald-600 text-xs"></i>
+                    </button>
+                    <button onclick="resetSimulation()" class="w-9 h-9 rounded-xl bg-slate-100 active:scale-95 border border-slate-200 flex items-center justify-center text-slate-700 hover:text-red-600 transition" title="Baştan Başlat">
+                        <i class="fa-solid fa-rotate-left text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Compact 6-Step Progress Bar & Segmented Tap Pills -->
+            <div class="grid grid-cols-6 gap-1.5 mt-2.5" id="mobileStepDots">
+                <!-- Populated dynamically by JS -->
+            </div>
+        </header>
+
+        <!-- ==================== 2. SCROLLABLE MOBILE STAGE VIEWPORT ==================== -->
+        <main class="flex-1 px-3.5 py-3.5 space-y-4 overflow-y-auto pb-28" id="mainViewport">
+
+            <!-- Helper Tip Banner: Reminding user that all blue badges are clickable -->
+            <div class="px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-between gap-2 shadow-sm">
+                <div class="flex items-center gap-2 text-[11px] text-sky-900 leading-tight">
+                    <i class="fa-solid fa-circle-info text-sky-600 text-sm shrink-0"></i>
+                    <span>Ekrandaki tüm <b class="text-sky-700 underline decoration-dashed">mavi kısaltmalara</b> dokunarak ne işe yaradıklarını öğrenebilirsin.</span>
+                </div>
+            </div>
+
+            <!-- =======================================================================
+                 AŞAMA 1: MÜŞTERİ GİRİŞİ & DOĞRULAMA (MÜŞTERİ TELEFONU)
+                 ======================================================================= -->
+            <section id="stage-1" class="stage-card space-y-4">
+                <!-- Context Card -->
+                <div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-orange-600 flex items-center gap-1">
+                            <i class="fa-solid fa-mobile-screen"></i> Müşteri Cep Telefonu Ekranı
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-500">Adım 1 / 6</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Müşteri uygulamamızı açtığında şifre ezberlemekle uğraşmaz. Cep numarasını yazar, SMS ile gelen tek kullanımlık <button type="button" class="term-badge" onclick="openTerm('OTP')">OTP</button> kodunu onaylar ve telefonuna <button type="button" class="term-badge" onclick="openTerm('JWT')">JWT</button> dijital kimlik anahtarı kaydedilerek oturumu 90 gün açık kalır.
+                    </p>
+                </div>
+
+                <!-- Interactive Smartphone Screen Frame (Light Mode Phone) -->
+                <div class="bg-slate-200 border-4 border-slate-300 rounded-[2rem] p-3 shadow-lg relative overflow-hidden">
+                    <!-- Speaker Notch -->
+                    <div class="w-20 h-2.5 bg-slate-400 rounded-full mx-auto mb-2.5"></div>
+
+                    <!-- Simulated Push SMS Notification Drop-down -->
+                    <div id="smsDropNotification" onclick="fillOtpAndVerify()" class="hidden mb-3 p-3 rounded-2xl bg-emerald-600 text-white text-left shadow-xl cursor-pointer active:scale-95 transition border-2 border-emerald-400">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-emerald-100 mb-1">
+                            <span><i class="fa-solid fa-comment-sms mr-1"></i> MESAJLAR • ŞİMDİ</span>
+                            <span class="bg-white text-emerald-800 px-1.5 py-0.5 rounded font-mono font-extrabold">DOKUN & OTOMATİK DOLDUR</span>
+                        </div>
+                        <p class="text-xs text-white leading-snug">
+                            LezzetKapında giriş için <button type="button" class="term-badge" onclick="event.stopPropagation(); openTerm('OTP')">OTP</button> doğrulama kodunuz: <strong class="font-mono text-sm underline bg-emerald-800 px-1.5 py-0.5 rounded">4829</strong>
+                        </p>
+                    </div>
+
+                    <!-- Phone Inner App UI -->
+                    <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-2xl bg-orange-100 border border-orange-200 text-orange-600 flex items-center justify-center text-lg shrink-0">
+                                <i class="fa-solid fa-burger"></i>
+                            </div>
+                            <div>
+                                <h2 class="font-extrabold text-sm text-slate-900">LezzetKapında Yerel</h2>
+                                <p class="text-[11px] text-slate-500">Hızlı SMS ile Müşteri Girişi</p>
+                            </div>
+                        </div>
+
+                        <!-- State 1A: Request SMS -->
+                        <div id="authViewPhone" class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <label class="text-[10px] font-bold uppercase text-slate-500 block mb-1">Cep Telefonu Numaranız</label>
+                                <div class="flex items-center justify-between font-mono text-sm text-slate-900 font-bold">
+                                    <span>+90 (532) 190 39 39</span>
+                                    <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="triggerSmsSimulation()" class="w-full min-h-[48px] py-3 px-4 rounded-xl bg-orange-600 active:bg-orange-700 text-white font-bold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>SMS Doğrulama Kodu Gönder</span>
+                            </button>
+                        </div>
+
+                        <!-- State 1B: Enter / Tap OTP -->
+                        <div id="authViewOtp" class="hidden space-y-3">
+                            <div class="text-center">
+                                <span class="text-[11px] text-slate-700">Üstteki yeşil SMS bildirimine veya aşağıdaki butona dokunarak <button type="button" class="term-badge" onclick="openTerm('OTP')">OTP</button> kodunu onayla:</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2 text-center font-mono text-lg font-extrabold text-emerald-700">
+                                <div class="bg-emerald-50 border-2 border-emerald-400 rounded-xl py-2.5">4</div>
+                                <div class="bg-emerald-50 border-2 border-emerald-400 rounded-xl py-2.5">8</div>
+                                <div class="bg-emerald-50 border-2 border-emerald-400 rounded-xl py-2.5">2</div>
+                                <div class="bg-emerald-50 border-2 border-emerald-400 rounded-xl py-2.5">9</div>
+                            </div>
+                            <button type="button" onclick="fillOtpAndVerify()" class="w-full min-h-[48px] py-3 px-4 rounded-xl bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs shadow-md cta-pulse-emerald flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-unlock-keyhole"></i>
+                                <span>Kodu Doğrula ve Oturum Aç</span>
+                            </button>
+                        </div>
+
+                        <!-- State 1C: Authenticated & JWT Token Generated -->
+                        <div id="authViewSuccess" class="hidden space-y-3">
+                            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center gap-3">
+                                <i class="fa-solid fa-shield-halved text-emerald-600 text-2xl shrink-0"></i>
+                                <div class="text-xs">
+                                    <div class="font-bold text-slate-900">Giriş Başarılı! Hoş Geldin Ahmet Y.</div>
+                                    <div class="text-[11px] text-emerald-800 mt-0.5">Kayıtlı Adres: Kurtuluş Mah. İstanbul Cad. No:42 D:5</div>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-bold text-slate-700">Telefona Kaydedilen Anahtar:</span>
+                                    <button type="button" class="term-badge" onclick="openTerm('JWT')">JWT</button>
+                                </div>
+                                <div class="font-mono text-[10px] text-sky-800 bg-sky-50 border border-sky-200 p-2 rounded-lg truncate">
+                                    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwNDIsInBob25lIjoiOTAzOTM5In0...
+                                </div>
+                                <p class="text-[10px] text-slate-600">
+                                    Bu şifreli jeton sayesinde müşteri uygulamayı her açtığında tekrar SMS ücreti ödemeyiz!
+                                </p>
+                            </div>
+
+                            <button type="button" onclick="goToStep(2)" class="w-full min-h-[48px] py-3 px-4 rounded-xl bg-orange-600 active:bg-orange-700 text-white font-bold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition">
+                                <span>Restoran Menüsüne Geç (Aşama 2)</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =======================================================================
+                 AŞAMA 2: SEPET & SİPARİŞ OLUŞTURMA (MÜŞTERİ UYGULAMASI)
+                 ======================================================================= -->
+            <section id="stage-2" class="stage-card hidden space-y-4">
+                <div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-orange-600 flex items-center gap-1">
+                            <i class="fa-solid fa-basket-shopping"></i> Müşteri Sipariş & Not Ekranı
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-500">Adım 2 / 6</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Müşterinin burada seçtiği ürünler ve yazdığı sipariş notu, **5. Aşamada restoranın SambaPOS adisyon ekranına** düşecek ve **termal yazıcıdan (<button type="button" class="term-badge" onclick="openTerm('ESCPOS')">ESC/POS</button>) birebir kağıt fiş** olarak çıkacaktır!
+                    </p>
+                </div>
+
+                <!-- Mobile Restaurant Menu Card -->
+                <div class="bg-white border-2 border-slate-200 rounded-3xl p-4 space-y-3.5 shadow-md">
+                    <!-- Restaurant Info -->
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">AÇIK • 25-35 dk</span>
+                            <h3 class="font-extrabold text-sm text-slate-900 mt-1">Odun Ateşi Lahmacun & Kebap</h3>
+                            <p class="text-[11px] text-slate-500">Yerel Komisyon: %8 • Kasa: SambaPOS V5</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-2xl bg-orange-100 border border-orange-200 text-orange-600 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-fire-flame-curved"></i>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Menu Items -->
+                    <div id="mobileMenuContainer" class="space-y-2">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Customer Note + Quick Tap Chips -->
+                    <div class="bg-orange-50/70 p-3 rounded-2xl border border-orange-200 space-y-2">
+                        <label class="text-[10px] font-bold uppercase text-orange-800 block">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i>Müşteri Sipariş Notu (SambaPOS & Fişte Görünür):
+                        </label>
+                        <input id="orderNoteInput" type="text" value="Zile basmayın bebek uyuyor, bol acı ezme olsun." class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-orange-500">
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="setQuickNote('Zile basmayın bebek uyuyor, bol acı ezme olsun.')" class="text-[10px] px-2 py-1 rounded-lg bg-white border border-slate-300 active:bg-slate-100 text-slate-700 font-medium">👶 Bebek uyuyor</button>
+                            <button type="button" onclick="setQuickNote('Soğansız olsun lütfen, kapıya asabilirsiniz.')" class="text-[10px] px-2 py-1 rounded-lg bg-white border border-slate-300 active:bg-slate-100 text-slate-700 font-medium">🧅 Soğansız olsun</button>
+                            <button type="button" onclick="setQuickNote('Servis (çatal/peçete) göndermeyin, sıcak gelsin.')" class="text-[10px] px-2 py-1 rounded-lg bg-white border border-slate-300 active:bg-slate-100 text-slate-700 font-medium">🌿 Çatal/Peçete Yok</button>
+                        </div>
+                    </div>
+
+                    <!-- Total & Confirm CTA -->
+                    <div class="pt-2 border-t border-slate-200 flex items-center justify-between gap-3">
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-semibold block">Sepet Tutarı</span>
+                            <span id="stage2TotalAmount" class="text-lg font-extrabold text-orange-600 font-mono">380 TL</span>
+                        </div>
+                        <button type="button" onclick="confirmCartGoToPayment()" class="flex-1 min-h-[48px] py-3 px-4 rounded-xl bg-orange-600 active:bg-orange-700 text-white font-bold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition">
+                            <span>Sepeti Onayla & Ödemeye Geç</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =======================================================================
+                 AŞAMA 3: ÖDEME EMRİ & VERİ AYRIŞTIRMA MİMARİSİ
+                 ======================================================================= -->
+            <section id="stage-3" class="stage-card hidden space-y-4">
+                <!-- Critical Question Explanation Card -->
+                <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 space-y-2 shadow-sm">
+                    <div class="flex items-center gap-2 text-amber-900 font-extrabold text-xs">
+                        <i class="fa-solid fa-circle-question text-amber-600 text-base"></i>
+                        <span>Kritik Soru: "Ödeme emrimiz restoranın yazılımına mı gidecek?"</span>
+                    </div>
+                    <p class="text-xs text-slate-800 leading-relaxed">
+                        <b>KESİNLİKLE HAYIR!</b> Müşterinin kredi kartı bilgileri ve para çekim emri restoranın <button type="button" class="term-badge" onclick="openTerm('POS')">POS</button> yazılımına gitmez. Para çekim emri doğrudan <button type="button" class="term-badge" onclick="openTerm('SANAL_POS')">Sanal POS</button> üzerinden <button type="button" class="term-badge" onclick="openTerm('ESCROW')">Escrow (Havuz Hesap)</button> içine çekilir. Restoranın SambaPOS ekranına ise <button type="button" class="term-badge" onclick="openTerm('WEBHOOK')">Webhook</button> ile sadece <b>"Yemek Listesi + ÖDEME ALINDI (Müşteriden Para İstemeyin!)"</b> bilgisi düşer.
+                    </p>
+                </div>
+
+                <!-- Payment Method Selector (2 Touch Cards) -->
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button type="button" id="payModeOnlineBtn" onclick="selectPaymentMode('ONLINE')" class="p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/70 text-left transition active:scale-95 shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <i class="fa-solid fa-credit-card text-emerald-700 text-sm"></i>
+                            <span id="payModeOnlineTag" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">SEÇİLİ</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">Online Kartla Öde</div>
+                        <div class="text-[10px] text-slate-600 mt-0.5">Para Havuza gider, SambaPOS'a "ÖDENDİ" düşer.</div>
+                    </button>
+
+                    <button type="button" id="payModeDoorBtn" onclick="selectPaymentMode('KAPIDA')" class="p-3 rounded-2xl border border-slate-300 bg-white text-left transition active:scale-95 shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <i class="fa-solid fa-hand-holding-dollar text-amber-600 text-sm"></i>
+                            <span id="payModeDoorTag" class="hidden text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500 text-white">SEÇİLİ</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">Kapıda Ödeme</div>
+                        <div class="text-[10px] text-slate-600 mt-0.5">Fişe "KAPIDA TAHSİL ET" basılır.</div>
+                    </button>
+                </div>
+
+                <!-- Trigger Button -->
+                <button type="button" onclick="animatePaymentSplitFlow()" class="w-full min-h-[48px] py-3 px-4 rounded-xl bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs shadow-md cta-pulse-emerald flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Ödemeyi Başlat & İkiye Ayrılan Veri Akışını İzle</span>
+                </button>
+
+                <!-- Vertical Mobile Split Architecture Diagram -->
+                <div class="bg-white border border-slate-200 rounded-3xl p-4 space-y-3 shadow-sm">
+                    <!-- Source Node -->
+                    <div class="p-3 rounded-2xl bg-slate-100 border border-slate-300 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center">
+                                <i class="fa-solid fa-server"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-extrabold text-slate-900">Bizim Ana Sunucumuz (Backend)</div>
+                                <div id="stage3OrderSummaryText" class="text-[10px] font-mono text-slate-600">Sipariş #1042 • 380.00 TL</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-300">2 Ayrı Kanal</span>
+                    </div>
+
+                    <!-- Animated Down Arrows -->
+                    <div class="grid grid-cols-2 gap-3 text-center text-[10px] font-mono text-slate-600 py-0.5">
+                        <div class="flex flex-col items-center">
+                            <span class="text-emerald-700 font-extrabold">1. FİNANSAL AKIŞ (BANKA)</span>
+                            <i class="fa-solid fa-angles-down text-emerald-600 text-sm mt-0.5 animate-bounce"></i>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-sky-700 font-extrabold">2. MUTFAK/POS AKIŞI</span>
+                            <i class="fa-solid fa-angles-down text-sky-600 text-sm mt-0.5 animate-bounce"></i>
+                        </div>
+                    </div>
+
+                    <!-- BRANCH 1: FINANCIAL FLOW (SANAL POS & ESCROW) -->
+                    <div id="flowCardFinancial" class="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-600 text-white">
+                                1. Kanal: Para & Kart Emri Nereye Gider?
+                            </span>
+                            <i class="fa-solid fa-building-columns text-emerald-700"></i>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            Müşteri <button type="button" class="term-badge" onclick="openTerm('3D_SECURE')">3D Secure</button> şifresini girince para <button type="button" class="term-badge" onclick="openTerm('SANAL_POS')">Sanal POS</button> (Iyzico/PayTR) tarafından çekilir ve <button type="button" class="term-badge" onclick="openTerm('ESCROW')">Escrow (Havuz Hesap)</button> içine alınır:
+                        </p>
+                        <div class="p-2.5 rounded-xl bg-white border border-emerald-200 font-mono text-[11px] space-y-1">
+                            <div class="flex justify-between text-slate-700">
+                                <span>Müşteriden Çekilen:</span>
+                                <span id="finTotalVal" class="font-bold text-slate-900">380.00 TL</span>
+                            </div>
+                            <div class="flex justify-between text-orange-700">
+                                <span>Platform Komisyonu (%8):</span>
+                                <span id="finCommissionVal" class="font-semibold">-30.40 TL</span>
+                            </div>
+                            <div class="flex justify-between text-emerald-700 border-t border-slate-200 pt-1">
+                                <span>Restoran Hak Edişi (Havuzda):</span>
+                                <span id="finNetVal" class="font-extrabold">349.60 TL</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BRANCH 2: OPERATIONAL ORDER PAYLOAD -->
+                    <div id="flowCardOperational" class="p-3.5 rounded-2xl bg-sky-50/60 border border-sky-200 space-y-2 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-sky-600 text-white">
+                                2. Kanal: Restorana Giden Sipariş Paketi
+                            </span>
+                            <i class="fa-solid fa-file-code text-sky-700"></i>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            Ödeme kuruluşu sunucumuza <button type="button" class="term-badge" onclick="openTerm('WEBHOOK')">Webhook</button> ile <i>"Para çekildi"</i> onayı verince, restorana kart bilgisi olmadan şu veri yollanır:
+                        </p>
+                        <div class="p-2.5 rounded-xl bg-slate-900 text-sky-200 font-mono text-[10px] leading-relaxed">
+                            {<br>
+                            &nbsp;&nbsp;"adisyonNo": "#1042",<br>
+                            &nbsp;&nbsp;"odemeDurumu": <span id="jsonPayStatusText" class="text-emerald-400 font-bold">"ONLINE_ODENDI (TAHSİLAT YAPMA!)"</span>,<br>
+                            &nbsp;&nbsp;"musteriNotu": "<span id="jsonNoteText">Zile basmayın...</span>"<br>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Proceed CTA -->
+                    <div id="stage3ProceedBox" class="hidden pt-1">
+                        <button type="button" onclick="goToStep(4)" class="w-full min-h-[48px] py-3 px-4 rounded-xl bg-orange-600 active:bg-orange-700 text-white font-bold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition">
+                            <span>Bu Sipariş Restoranın SambaPOS Ekranına Nasıl Girecek? (Aşama 4)</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =======================================================================
+                 AŞAMA 4: RESTORAN ENTEGRASYONU & 7 FARKLI "ARKA KAPI" KÖPRÜSÜ
+                 ======================================================================= -->
+            <section id="stage-4" class="stage-card hidden space-y-4">
+                <div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-orange-600 flex items-center gap-1">
+                            <i class="fa-solid fa-plug-circle-bolt"></i> Restoran Kasa Ekranında Nasıl Var Oluruz?
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-500">Adım 4 / 6</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Buradan seçeceğin yönteme göre <b>5. Aşamadaki gerçekçi SambaPOS Kasa Ekranı</b> o yöntemin birebir restoranda nasıl göründüğünü ve çalıştığını canlı olarak taklit edecektir! (<button type="button" class="term-badge" onclick="openTerm('API_PAYWALL')">API Paywall</button> ödemeden kullanabileceğimiz yöntemler):
+                    </p>
+                </div>
+
+                <!-- 7 Comprehensive Integration & Workaround Methods Selector -->
+                <div class="space-y-2" id="stage4MethodsList">
+                    <!-- YÖNTEM 1 -->
+                    <button type="button" id="methodBtn-1" onclick="selectBridgeMethod('1')" class="w-full p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/70 text-left transition active:scale-[0.99] shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 text-white">YÖNTEM 1 • HER POS ÜSTÜNDE ÇALIŞIR</span>
+                            <span class="text-[10px] font-mono text-emerald-800 font-bold">Maliyet: 0 TL</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">1. Kendi "Always-on-Top" (Üstte Kalan) Bildirim Programımız</div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">Arkada SambaPOS açıkken ekranın sağ üstünde asla alta düşmeyen canlı sipariş penceresi + otomatik fiş basımı.</p>
+                    </button>
+
+                    <!-- YÖNTEM 2 -->
+                    <button type="button" id="methodBtn-2" onclick="selectBridgeMethod('2')" class="w-full p-3 rounded-2xl border border-slate-200 bg-white text-left transition active:scale-[0.99] shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-300">YÖNTEM 2 • SAMBAPOS DOĞRUDAN ENTEGRASYON</span>
+                            <span class="text-[10px] font-mono text-sky-700 font-bold">Maliyet: 0 TL</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">2. SambaPOS Yerel GraphQL API & Message Server (Port 9000)</div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">SambaPOS V5'in yerel API'si ile doğrudan SambaPOS'un kendi "Paket Servis" ekranına adisyon düşürme.</p>
+                    </button>
+
+                    <!-- YÖNTEM 3 -->
+                    <button type="button" id="methodBtn-3" onclick="selectBridgeMethod('3')" class="w-full p-3 rounded-2xl border border-slate-200 bg-white text-left transition active:scale-[0.99] shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-300">YÖNTEM 3 • DONANIM ARKA KAPISI</span>
+                            <span class="text-[10px] font-mono text-teal-700 font-bold">Maliyet: 0 TL</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">3. Doğrudan Termal Yazıcı Köprüsü (Port 9100 / ESC/POS)</div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">Kasa yazılımını tamamen bypass edip yerel ağdaki mutfak/kasa yazıcısından sesli uyarı ile anında fiş çıkarma.</p>
+                    </button>
+
+                    <!-- YÖNTEM 4 -->
+                    <button type="button" id="methodBtn-4" onclick="selectBridgeMethod('4')" class="w-full p-3 rounded-2xl border border-slate-200 bg-white text-left transition active:scale-[0.99] shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-300">YÖNTEM 4 • VERİTABANI ARKA KAPISI</span>
+                            <span class="text-[10px] font-mono text-purple-700 font-bold">Maliyet: 0 TL</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">4. Yerel Veritabanı (MS SQL) Doğrudan Tablo Enjeksiyonu</div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">SambaPOS/Vega/NarPOS'un MS SQL veritabanındaki dbo.Tickets tablosuna doğrudan adisyon kaydı yazma.</p>
+                    </button>
+
+                    <!-- YÖNTEM 5 -->
+                    <button type="button" id="methodBtn-5" onclick="selectBridgeMethod('5')" class="w-full p-3 rounded-2xl border border-slate-200 bg-white text-left transition active:scale-[0.99] shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-pink-100 text-pink-800 border border-pink-300">YÖNTEM 5 • EN YARATICI HACK</span>
+                            <span class="text-[10px] font-mono text-pink-700 font-bold">Maliyet: 0 TL</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">5. Caller ID (Sanal COM Port) ile Telefon Çalıyor Taklidi</div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">SambaPOS alt barında "Hat 1 Arıyor: Ahmet Yılmaz" pop-up'ı açtırıp tek tıkla adisyon ekranına geçirme.</p>
+                    </button>
+
+                    <!-- YÖNTEM 6 -->
+                    <button type="button" id="methodBtn-6" onclick="selectBridgeMethod('6')" class="w-full p-3 rounded-2xl border border-slate-200 bg-white text-left transition active:scale-[0.99] shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">YÖNTEM 6 • BULUT / WEB POS ÇÖZÜMÜ</span>
+                            <span class="text-[10px] font-mono text-amber-700 font-bold">Maliyet: 0 TL</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">6. Chrome Eklentisi (DOM Injection) & RPA Otomatik Tuşlama</div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">Web tabanlı POS'ların içine bildirim barı gömme ve RPA robotu ile ekrandaki yemek butonlarına otomatik tıklatma.</p>
+                    </button>
+
+                    <!-- YÖNTEM 7 -->
+                    <button type="button" id="methodBtn-7" onclick="selectBridgeMethod('7')" class="w-full p-3 rounded-2xl border border-slate-200 bg-white text-left transition active:scale-[0.99] shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800 border border-red-300">YÖNTEM 7 • RESMİ KURUMSAL KANAL</span>
+                            <span class="text-[10px] font-mono text-red-700 font-bold">Aylık Lisans Ücreti</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-slate-900">7. Resmi Bulut POS API & Entegratör Bağlantısı</div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">POS yazılım firmasına aylık API Paywall ücreti ödeyerek resmi bulut üzerinden bağlanma.</p>
+                    </button>
+                </div>
+
+                <!-- Dynamic Technical Explanation Card -->
+                <div id="methodArchitectureBox" class="p-4 rounded-3xl bg-white border-2 border-emerald-500 space-y-3 shadow-md">
+                    <!-- Populated dynamically by JS -->
+                </div>
+
+                <button type="button" onclick="dispatchOrderToRestaurantStage()" class="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-orange-600 active:bg-orange-700 text-white font-bold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span id="stage4DispatchBtnText">Seçili Yöntemi Restoranın SambaPOS Ekranında Canlı Gör (Aşama 5)</span>
+                </button>
+            </section>
+
+            <!-- =======================================================================
+                 AŞAMA 5: GERÇEKÇİ SAMBAPOS V5 KASA EKRANI, TERMAL FİŞ & MUTFAK (KDS)
+                 ======================================================================= -->
+            <section id="stage-5" class="stage-card hidden space-y-4">
+                <!-- Simulation Control Bar: Idle POS vs Incoming Order Trigger -->
+                <div class="p-3.5 rounded-2xl bg-white border-2 border-orange-300 shadow-sm space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-extrabold text-slate-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-desktop text-orange-600"></i> Restoran Kasa Simülasyonu Kontrolü
+                        </span>
+                        <span id="posSimStateBadge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">DURUM: NORMAL KASA (BEKLEMEDE)</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 leading-snug">
+                        Önce kasiyerin sipariş yokken gördüğü <b>Normal Kasa Ekranını</b> incele, ardından <b>"Şimdi Sipariş Gönder"</b> butonuna dokunarak sipariş geldiği an ekranda ne olduğunu canlı test et!
+                    </p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btnPosStateIdle" onclick="setPosSimulationState(false)" class="py-2.5 px-2.5 rounded-xl border-2 border-slate-800 bg-slate-800 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95">
+                            <i class="fa-solid fa-eye"></i>
+                            <span>1. Normal Ekran (Sipariş Yok)</span>
+                        </button>
+                        <button type="button" id="btnPosStateIncoming" onclick="setPosSimulationState(true)" class="py-2.5 px-2.5 rounded-xl border-2 border-orange-600 bg-orange-600 text-white font-extrabold text-[11px] shadow-md cta-pulse flex items-center justify-center gap-1.5 transition active:scale-95">
+                            <i class="fa-solid fa-bell"></i>
+                            <span>2. Şimdi Sipariş Gönder!</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===============================================================
+                     AUTHENTIC SAMBAPOS V5 TOUCHSCREEN MONITOR REPLICA
+                     =============================================================== -->
+                <div class="rounded-2xl border-4 border-slate-700 bg-slate-200 shadow-xl overflow-hidden relative">
+
+                    <!-- 1. SAMBAPOS TOP HEADER BAR -->
+                    <div class="bg-[#1e293b] text-white px-3 py-1.5 flex items-center justify-between text-[11px] border-b border-slate-600">
+                        <div class="flex items-center gap-2">
+                            <span class="font-extrabold tracking-tight text-orange-400 flex items-center gap-1">
+                                <i class="fa-solid fa-cubes"></i> SambaPOS V5 Pro
+                            </span>
+                            <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-mono" id="sambaHeaderModeBadge">Message Server: Bağlı (9000)</span>
+                        </div>
+                        <div class="flex items-center gap-2 font-mono text-[10px] text-slate-300">
+                            <span>KASA-1</span>
+                            <span>•</span>
+                            <span id="sambaClock">17:05</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. SAMBAPOS SCREEN TABS & EXTERNAL PLATFORM CHANNELS (Trendyol, Getir, Yemeksepeti etc.) -->
+                    <div class="bg-slate-300 px-2 py-1.5 space-y-1.5 border-b border-slate-400 text-[10px] font-bold">
+                        <div class="flex items-center justify-between gap-1">
+                            <div class="flex items-center gap-1">
+                                <button type="button" onclick="switchSambaSubView('POS')" id="sambaTabPosBtn" class="px-2 py-1 rounded bg-[#2563eb] text-white shadow-sm flex items-center gap-1">
+                                    <i class="fa-solid fa-cash-register"></i> Kasa & Adisyon
+                                </button>
+                                <button type="button" onclick="switchSambaSubView('DELIVERY')" id="sambaTabDeliveryBtn" class="px-2 py-1 rounded bg-white text-slate-700 border border-slate-300 flex items-center gap-1">
+                                    <i class="fa-solid fa-motorcycle"></i> Paket Servis (<span id="sambaDeliveryTabCount">0</span>)
+                                </button>
+                            </div>
+                            <button type="button" onclick="goToStep(4)" class="px-2 py-1 rounded bg-slate-800 text-amber-300 font-mono text-[9px]" title="Entegrasyon Yöntemini Değiştir">
+                                <i class="fa-solid fa-sliders mr-0.5"></i><span id="stage5BridgeBadge">Yöntem 1</span>
+                            </button>
+                        </div>
+
+                        <!-- Restaurant's Daily External Channel Buttons Bar -->
+                        <div class="grid grid-cols-4 gap-1 text-[9px]">
+                            <div class="px-1.5 py-1 rounded bg-orange-100 border border-orange-300 text-orange-900 flex items-center justify-between">
+                                <span class="truncate font-extrabold">🟠 Trendyol</span>
+                                <span class="font-mono bg-orange-600 text-white px-1 rounded text-[8px]">1</span>
+                            </div>
+                            <div class="px-1.5 py-1 rounded bg-purple-100 border border-purple-300 text-purple-900 flex items-center justify-between">
+                                <span class="truncate font-extrabold">🟣 GetirYemek</span>
+                                <span class="font-mono bg-purple-700 text-white px-1 rounded text-[8px]">0</span>
+                            </div>
+                            <div class="px-1.5 py-1 rounded bg-rose-100 border border-rose-300 text-rose-900 flex items-center justify-between">
+                                <span class="truncate font-extrabold">🔴 Yemeksepeti</span>
+                                <span class="font-mono bg-rose-600 text-white px-1 rounded text-[8px]">0</span>
+                            </div>
+                            <div id="channelPillOurApp" class="px-1.5 py-1 rounded bg-slate-100 border border-slate-300 text-slate-600 flex items-center justify-between transition-all">
+                                <span class="truncate font-extrabold">🟢 Bizim App</span>
+                                <span id="channelCountOurApp" class="font-mono bg-slate-500 text-white px-1 rounded text-[8px]">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. DYNAMIC CHROME DOM INJECTION BAR (Shown when Method 6 is selected & order arrives) -->
+                    <div id="sambaDomInjectionBar" class="hidden bg-amber-400 text-slate-950 px-3 py-2 text-[11px] font-extrabold flex items-center justify-between border-b-2 border-amber-600 shadow-md">
+                        <span><i class="fa-brands fa-chrome mr-1"></i> [DOM Injection Bar] Yeni Sipariş #1042 Yakalandı!</span>
+                        <button type="button" onclick="runRpaAutoClickSimulation()" class="px-2.5 py-1 rounded-lg bg-slate-900 text-amber-300 text-[10px] font-mono shadow cta-pulse">
+                            🤖 RPA İle Otomatik Tuşla
+                        </button>
+                    </div>
+
+                    <!-- 4A. SAMBAPOS MAIN WORKSPACE: ADİSYON & POS VIEW -->
+                    <div id="sambaWorkspacePos" class="p-2 grid grid-cols-12 gap-2 bg-[#e2e8f0] min-h-[360px] relative">
+
+                        <!-- LEFT COLUMN (7 Cols): SAMBAPOS WHITE TICKET (ADİSYON) PANE -->
+                        <div class="col-span-7 bg-white rounded-lg border border-slate-300 flex flex-col justify-between shadow-sm overflow-hidden">
+
+                            <!-- IDLE STATE: SHOWN BEFORE ORDER ARRIVES -->
+                            <div id="sambaTicketIdleView" class="flex-1 flex flex-col justify-between p-3 text-center">
+                                <div class="flex items-center justify-between border-b border-slate-200 pb-2 text-[10px] text-slate-500 font-bold">
+                                    <span>AÇIK ADİSYON YOK</span>
+                                    <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded">Salon: 6 Masa Dolu</span>
+                                </div>
+
+                                <div class="my-auto py-4 space-y-2">
+                                    <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center mx-auto text-xl">
+                                        <i class="fa-solid fa-receipt"></i>
+                                    </div>
+                                    <div class="text-xs font-extrabold text-slate-700">Kasa Şu An Normal Bekleme Modunda</div>
+                                    <p class="text-[10px] text-slate-500 leading-relaxed px-2">
+                                        Kasiyer şu an boş adisyon ekranına bakıyor. Yukarıdaki <b>"2. Şimdi Sipariş Gönder!"</b> butonuna basarak müşterinin verdiği siparişin bu ekrana nasıl düştüğünü test et!
+                                    </p>
+                                    <button type="button" onclick="setPosSimulationState(true)" class="mt-1 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-600 text-white font-extrabold text-[10px] shadow cta-pulse">
+                                        <i class="fa-solid fa-bolt"></i>
+                                        <span>Sipariş Gelişini Şimdi Simüle Et</span>
+                                    </button>
+                                </div>
+
+                                <div class="p-2 rounded bg-slate-800 text-white flex items-center justify-between text-[10px]">
+                                    <span class="text-slate-400">BAKİYE</span>
+                                    <span class="font-mono font-extrabold text-sm text-slate-300">0.00 TL</span>
+                                </div>
+                            </div>
+
+                            <!-- ACTIVE TICKET STATE: SHOWN WHEN ORDER POPULATES SAMBAPOS -->
+                            <div id="sambaTicketActiveView" class="hidden flex-1 flex flex-col justify-between">
+                                <!-- Ticket Customer & Status Header -->
+                                <div class="p-2 bg-slate-100 border-b border-slate-300 space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span id="sambaTicketNumberTitle" class="font-extrabold text-[11px] text-slate-900">Adisyon #1042</span>
+                                        <span id="sambaTicketStatusPill" class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-orange-500 text-white">YENİ ONLINE SİPARİŞ</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-700 font-medium leading-tight">
+                                        <div><i class="fa-solid fa-user text-slate-500 mr-1"></i><b>Müşteri:</b> Ahmet Yılmaz</div>
+                                        <div class="truncate"><i class="fa-solid fa-location-dot text-slate-500 mr-1"></i>Kurtuluş Mah. İstanbul Cad. No:42 D:5</div>
+                                    </div>
+                                </div>
+
+                                <!-- Ticket Order Lines Table (SambaPOS Authentic List) -->
+                                <div id="sambaTicketLinesContainer" class="p-2 flex-1 space-y-1 font-mono text-[10px] overflow-y-auto max-h-40 divide-y divide-slate-100">
+                                    <!-- Filled dynamically by JS -->
+                                </div>
+
+                                <!-- Ticket Note Tag (SambaPOS Ticket Tag style) -->
+                                <div class="px-2 py-1.5 bg-amber-50 border-t border-amber-200 text-[10px] text-amber-900">
+                                    <span class="font-bold"><i class="fa-solid fa-tag mr-1"></i>Adisyon Notu:</span>
+                                    <span id="stage5NoteText" class="italic">Zile basmayın bebek uyuyor...</span>
+                                </div>
+
+                                <!-- Ticket Bottom Balance & Payment Status Bar -->
+                                <div class="p-2 bg-slate-800 text-white flex items-center justify-between">
+                                    <div>
+                                        <span class="text-[9px] text-slate-300 block uppercase">Ödeme Durumu (<button type="button" class="term-badge" onclick="openTerm('WEBHOOK')">Webhook</button>)</span>
+                                        <span id="stage5PaymentPill" class="text-[10px] font-extrabold text-emerald-400">ONLINE ÖDENDİ (0.00 TL Bakiye)</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[9px] text-slate-300 block">TOPLAM</span>
+                                        <span id="stage5TotalText" class="text-sm font-extrabold font-mono text-orange-400">380.00 TL</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN (5 Cols): SAMBAPOS CATEGORY & MENU TILES + ACTION BUTTONS -->
+                        <div class="col-span-5 flex flex-col justify-between gap-1.5">
+                            <!-- Category Header -->
+                            <div class="text-[9px] font-bold uppercase text-slate-600 px-1 flex items-center justify-between">
+                                <span>Kasa Menü Tuşları</span>
+                                <button type="button" class="term-badge" onclick="openTerm('POS')">POS</button>
+                            </div>
+
+                            <!-- SambaPOS Colorful Menu Tiles (Interactive!) -->
+                            <div class="grid grid-cols-1 gap-1.5">
+                                <div id="sambaTile-1" onclick="sambaQuickAddItem(1)" class="samba-tile p-2 rounded bg-[#dc2626] text-white font-bold text-[10px] shadow cursor-pointer flex items-center justify-between">
+                                    <span class="truncate">Lahmacun (Acılı)</span>
+                                    <span class="font-mono text-[9px] bg-black/25 px-1 rounded">110₺</span>
+                                </div>
+                                <div id="sambaTile-2" onclick="sambaQuickAddItem(2)" class="samba-tile p-2 rounded bg-[#0284c7] text-white font-bold text-[10px] shadow cursor-pointer flex items-center justify-between">
+                                    <span class="truncate">Yayık Ayranı</span>
+                                    <span class="font-mono text-[9px] bg-black/25 px-1 rounded">45₺</span>
+                                </div>
+                                <div id="sambaTile-3" onclick="sambaQuickAddItem(3)" class="samba-tile p-2 rounded bg-[#d97706] text-white font-bold text-[10px] shadow cursor-pointer flex items-center justify-between">
+                                    <span class="truncate">Antep Künefe</span>
+                                    <span class="font-mono text-[9px] bg-black/25 px-1 rounded">115₺</span>
+                                </div>
+                            </div>
+
+                            <!-- Method-Specific Status Box inside SambaPOS -->
+                            <div id="stage5MethodScreenContext" class="p-2 rounded-lg bg-white border border-slate-300 text-[10px] text-slate-700 leading-tight shadow-sm">
+                                <!-- Filled by JS -->
+                            </div>
+
+                            <!-- SambaPOS Authentic Bottom Command Buttons -->
+                            <div class="space-y-1.5 pt-1">
+                                <button type="button" id="btnApproveAndPrint" onclick="approveAndPrintThermalReceipt()" class="w-full py-2.5 px-2 rounded-lg bg-[#16a34a] active:bg-[#15803d] text-white font-extrabold text-[11px] shadow-md flex items-center justify-center gap-1.5 transition">
+                                    <i class="fa-solid fa-print"></i>
+                                    <span id="btnApproveAndPrintText">Adisyonu Onayla & Fiş Yazdır</span>
+                                </button>
+                                <div class="grid grid-cols-2 gap-1">
+                                    <button type="button" onclick="switchSambaSubView('DELIVERY')" class="py-1.5 px-1 rounded bg-[#2563eb] text-white font-bold text-[9px] text-center">
+                                        Paket Servis Ekranı
+                                    </button>
+                                    <button type="button" onclick="openTerm('GRAPHQL')" class="py-1.5 px-1 rounded bg-slate-700 text-slate-100 font-bold text-[9px] text-center">
+                                        GraphQL Detayı
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- =========================================================
+                             OVERLAY 1: SOLID OPAQUE ALWAYS-ON-TOP FLOATING MINI-APP WINDOW
+                             ========================================================= -->
+                        <div id="sambaAlwaysOnTopOverlay" class="hidden absolute inset-0 z-30 bg-slate-900/60 backdrop-blur-[1px] p-2.5 flex items-center justify-center">
+                            <div class="w-full bg-white rounded-2xl border-4 border-emerald-600 shadow-2xl overflow-hidden animate-[bounce_0.4s_ease-in-out]">
+                                <!-- Windows Topmost App Title Bar (100% Opaque Dark Header) -->
+                                <div class="bg-emerald-700 text-white px-3 py-2 flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-300 animate-ping"></span>
+                                        <span class="text-[11px] font-extrabold tracking-tight">📌 LezzetKapında Kasa Ajanı (Always-on-Top)</span>
+                                    </div>
+                                    <span class="text-[9px] font-mono bg-emerald-900 px-1.5 py-0.5 rounded border border-emerald-400">Topmost=True</span>
+                                </div>
+
+                                <!-- Solid White Window Body -->
+                                <div class="p-3 bg-white space-y-2.5 text-slate-900">
+                                    <div class="flex items-center justify-between bg-amber-50 border border-amber-300 px-2.5 py-1.5 rounded-xl">
+                                        <div>
+                                            <div class="text-xs font-extrabold text-slate-900">🔔 YENİ SİPARİŞ #1042 GELDİ!</div>
+                                            <div class="text-[10px] text-slate-700">Ahmet Yılmaz • Kurtuluş Mah. No:42 D:5</div>
+                                        </div>
+                                        <span id="alwaysOnTopTotalBadge" class="text-xs font-mono font-extrabold bg-emerald-600 text-white px-2 py-1 rounded-lg">380 TL</span>
+                                    </div>
+
+                                    <!-- Order Items Preview inside Floating Window -->
+                                    <div id="alwaysOnTopItemsList" class="bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono text-[10px] text-slate-800 space-y-0.5 max-h-24 overflow-y-auto">
+                                        <!-- Filled by JS -->
+                                    </div>
+
+                                    <p class="text-[10px] text-slate-600 leading-snug">
+                                        Arkada <b>SambaPOS normal ekranında</b> dururken bizim <button type="button" class="term-badge" onclick="openTerm('ALWAYS_ON_TOP')">Always-on-Top</button> penceremiz en üstte açıldı! Tek tıkla hem <button type="button" class="term-badge" onclick="openTerm('PORT_9100')">Port 9100</button> yazıcıdan fiş çıkar hem de adisyonu aktar:
+                                    </p>
+
+                                    <div class="flex items-center gap-2 pt-0.5">
+                                        <button type="button" onclick="acceptFromAlwaysOnTopWindow()" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 active:bg-emerald-700 text-white font-extrabold text-xs shadow-lg cta-pulse-emerald flex items-center justify-center gap-1.5">
+                                            <i class="fa-solid fa-print"></i>
+                                            <span>Kabul Et & Fiş Çıkar</span>
+                                        </button>
+                                        <button type="button" onclick="minimizeAlwaysOnTopToInspectPos()" class="py-2.5 px-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[10px]">
+                                            Adisyona Aktar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- =========================================================
+                             OVERLAY 2: CALLER ID POPUP AT BOTTOM RIGHT (When Method 5 selected)
+                             ========================================================= -->
+                        <div id="sambaCallerIdPopup" class="hidden absolute bottom-2 right-2 left-2 z-30 p-3 rounded-2xl bg-pink-950 text-white border-2 border-pink-400 shadow-2xl flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-pink-600 flex items-center justify-center animate-bounce shrink-0">
+                                    <i class="fa-solid fa-phone-volume text-sm"></i>
+                                </div>
+                                <div class="text-[10px] leading-tight">
+                                    <div class="font-extrabold text-pink-200">📞 SAMBAPOS CALLER ID (COM3 HAT 1 ARIYOR)</div>
+                                    <div class="font-mono font-bold text-white text-xs">+90 532 190 3939 • Ahmet Yılmaz</div>
+                                    <div class="text-[9px] text-pink-300">Kasiyer buraya tıkladığı an müşteri fişi SambaPOS'ta açılır!</div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="acceptFromCallerIdPopup()" class="px-3 py-2 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-[10px] shadow shrink-0 cta-pulse-emerald">
+                                Tıkla & Adisyonu Aç
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <!-- 4B. SAMBAPOS DELIVERY SCREEN (PAKET SERVİS EKRANI) -->
+                    <div id="sambaWorkspaceDelivery" class="hidden p-2.5 bg-[#e2e8f0] min-h-[340px] space-y-2.5">
+                        <div class="bg-white p-2.5 rounded-lg border border-slate-300 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-extrabold text-slate-900">SambaPOS Paket Servis Yönetimi</div>
+                                <div class="text-[10px] text-slate-600">Hazırlanan paketler ve kurye bekleyen adisyonlar</div>
+                            </div>
+                            <button type="button" onclick="switchSambaSubView('POS')" class="px-2.5 py-1 rounded bg-slate-800 text-white text-[10px] font-bold">
+                                <i class="fa-solid fa-arrow-left mr-1"></i>Adisyona Dön
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <!-- Column 1: Bekleyen / Hazırlanan Paketler -->
+                            <div class="bg-white p-2.5 rounded-lg border border-slate-300 space-y-2">
+                                <div class="text-[10px] font-extrabold uppercase text-orange-700 border-b border-slate-200 pb-1">
+                                    1. Mutfağa İletilen Paketler
+                                </div>
+                                <div class="p-2 rounded bg-orange-50 border border-orange-300 space-y-1 text-[10px]">
+                                    <div class="font-extrabold text-slate-900 flex justify-between">
+                                        <span>Adisyon #1042</span>
+                                        <span class="text-emerald-700 font-mono">380 TL</span>
+                                    </div>
+                                    <div class="text-slate-700">Ahmet Yılmaz (Kurtuluş Mah.)</div>
+                                    <div id="sambaDeliveryCardStatus" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 inline-block">
+                                        Onay & Fiş Bekliyor
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Kurye Seçimi Özeti -->
+                            <div class="bg-white p-2.5 rounded-lg border border-slate-300 space-y-2">
+                                <div class="text-[10px] font-extrabold uppercase text-sky-700 border-b border-slate-200 pb-1">
+                                    2. Kurye Çağırma Durumu
+                                </div>
+                                <p class="text-[10px] text-slate-600 leading-snug">
+                                    Adisyon fişi basılıp mutfak <b>"Hazır"</b> onayını verdiğinde 6. Aşamadaki <b>Kurye Çağırma & Sevkiyat Ekranı</b> aktif olur.
+                                </p>
+                                <button type="button" onclick="goToStep(6)" class="w-full py-2 rounded bg-sky-600 text-white font-bold text-[10px]">
+                                    Sevkiyat Ekranına Git (Aşama 6)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===============================================================
+                     REALISTIC 80mm THERMAL PRINTER SLOT & PAPER SIMULATION
+                     =============================================================== -->
+                <div class="flex flex-col items-center pt-1">
+                    <!-- Printer Hardware Top Casing -->
+                    <div class="w-full bg-slate-800 border-2 border-slate-700 rounded-t-2xl p-3 shadow-md z-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span id="printerStatusLed" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                                <span class="text-xs font-mono font-bold text-white">80mm Termal Fiş Yazıcı (Kasa/Mutfak)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button type="button" class="term-badge" onclick="openTerm('ESCPOS')">ESC/POS</button>
+                                <button type="button" class="term-badge" onclick="openTerm('PORT_9100')">Port 9100</button>
+                            </div>
+                        </div>
+                        <!-- Dark Paper Slot -->
+                        <div class="w-full h-3 bg-slate-950 rounded-full border border-slate-600 shadow-inner"></div>
+                    </div>
+
+                    <!-- Idle Notice before user taps print -->
+                    <div id="printerWaitingNotice" class="w-full py-5 px-4 bg-white border-x border-b border-dashed border-slate-300 rounded-b-2xl text-center text-xs text-slate-600 shadow-sm">
+                        <i class="fa-solid fa-receipt text-xl mb-1 block text-orange-500"></i>
+                        Yukarıdaki SambaPOS ekranında <b>"Adisyonu Onayla & Fiş Yazdır"</b> butonuna dokunduğunda yazıcıdan sesli olarak gerçek kağıt fiş çıkacaktır.
+                    </div>
+
+                    <!-- Sliding Paper Receipt -->
+                    <div id="thermalReceiptPaper" class="receipt-paper w-[94%] mx-auto px-4 pt-3 pb-6 font-mono text-[11px] leading-snug max-h-0 opacity-0">
+                        <div class="text-center border-b border-dashed border-slate-400 pb-2 mb-2">
+                            <div class="font-extrabold text-sm tracking-tight">ODUN ATEŞİ LAHMACUN & KEBAP</div>
+                            <div class="text-[10px] text-slate-600">SambaPOS Adisyon Fişi • LezzetKapında</div>
+                            <div class="text-[10px] font-bold mt-1 bg-slate-900 text-white py-0.5 px-2 inline-block rounded">ADİSYON #1042 • 17:05</div>
+                        </div>
+
+                        <div class="border-b border-dashed border-slate-400 pb-2 mb-2 text-[10px]">
+                            <div><b>MÜŞTERİ:</b> Ahmet Yılmaz (+90 532 190 3939)</div>
+                            <div><b>ADRES:</b> Kurtuluş Mah. İstanbul Cad. No:42 D:5</div>
+                        </div>
+
+                        <div id="receiptPaperItems" class="border-b border-dashed border-slate-400 pb-2 mb-2 space-y-1">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div class="border-b border-dashed border-slate-400 pb-2 mb-2 bg-amber-100/80 p-1.5 rounded text-[10px]">
+                            <b>MÜŞTERİ NOTU:</b> <span id="receiptPaperNote">Zile basmayın bebek uyuyor...</span>
+                        </div>
+
+                        <div class="flex justify-between font-extrabold text-xs mb-2">
+                            <span>TOPLAM TUTAR:</span>
+                            <span id="receiptPaperTotal">380.00 TL</span>
+                        </div>
+
+                        <!-- Bold Payment Stamp -->
+                        <div id="receiptPaperStamp" class="border-2 border-slate-900 text-center py-1.5 px-2 font-extrabold text-[11px] mb-2.5 bg-emerald-100/70">
+                            *** ONLINE ÖDENDİ ***<br>
+                            <span class="text-[9px] font-bold">MÜŞTERİDEN ÜCRET TAHSİL ETMEYİNİZ!</span>
+                        </div>
+
+                        <!-- Interactive QR Handshake Block at bottom of receipt -->
+                        <div class="text-center pt-1 border-t border-dashed border-slate-400">
+                            <div class="text-[9px] font-bold text-slate-700 mb-1">
+                                KURYE PAKET ZİMMET & HARİTA BARKODU:
+                            </div>
+                            <div onclick="openTerm('QR_HANDSHAKE')" class="w-20 h-20 mx-auto border-2 border-slate-900 p-1 grid grid-cols-5 gap-0.5 bg-white cursor-pointer active:scale-95 transition">
+                                <div class="bg-slate-900"></div><div class="bg-slate-900"></div><div class="bg-white"></div><div class="bg-slate-900"></div><div class="bg-slate-900"></div>
+                                <div class="bg-slate-900"></div><div class="bg-white"></div><div class="bg-slate-900"></div><div class="bg-white"></div><div class="bg-slate-900"></div>
+                                <div class="bg-white"></div><div class="bg-slate-900"></div><div class="bg-slate-900"></div><div class="bg-slate-900"></div><div class="bg-white"></div>
+                                <div class="bg-slate-900"></div><div class="bg-white"></div><div class="bg-slate-900"></div><div class="bg-slate-900"></div><div class="bg-slate-900"></div>
+                                <div class="bg-slate-900"></div><div class="bg-slate-900"></div><div class="bg-white"></div><div class="bg-slate-900"></div><div class="bg-slate-900"></div>
+                            </div>
+                            <div class="mt-1.5">
+                                <button type="button" class="term-badge" onclick="openTerm('QR_HANDSHAKE')">QR Handshake</button>
+                            </div>
+                            <div class="text-[9px] text-slate-600 mt-0.5">Fiş poşete zımbalanır; kurye bu kodu okutarak teslim alır.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===============================================================
+                     INTERACTIVE KITCHEN DISPLAY SYSTEM (KDS - MUTFAK EKRANI)
+                     =============================================================== -->
+                <div id="kdsReadyBox" class="hidden p-4 rounded-3xl bg-white border-2 border-amber-500 space-y-3 shadow-lg">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-fire-burner text-orange-600"></i> Mutfak <button type="button" class="term-badge" onclick="openTerm('KDS')">KDS</button> Tablet Ekranı (Usta Ekranı)
+                        </span>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">SÜRE: 00:48</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Fiş poşetin üzerine zımbalandı! Mutfaktaki usta hazırladığı ürünlerin yanına dokunup <b>"Paket Hazır -> Kurye Çağır"</b> butonuna basar:
+                    </p>
+                    <div id="kdsChecklistItems" class="space-y-1.5 text-xs">
+                        <!-- Populated by JS -->
+                    </div>
+                    <button type="button" onclick="triggerKitchenReadyGoToCourier()" class="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-orange-600 active:bg-orange-700 text-white font-bold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-bell-concierge"></i>
+                        <span>Mutfak Onayı: Paket Hazır! -> Kurye Çağırma Ekranına Geç (Aşama 6)</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- =======================================================================
+                 AŞAMA 6: KURYE ÇAĞIRMA / SEVKİYAT EKRANI (DMS) & KURYE CEP UYGULAMASI
+                 ======================================================================= -->
+            <section id="stage-6" class="stage-card hidden space-y-4">
+                <!-- Explain the 2 distinct screens in Stage 6 -->
+                <div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700 flex items-center gap-1">
+                            <i class="fa-solid fa-route"></i> 2 Ayrı Ekran: 1. Kurye Çağırma Paneli & 2. Kurye Telefonu
+                        </span>
+                        <span id="dmsStatusPill" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">ATAMA BEKLİYOR</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Kurye operasyonu iki farklı ekran üzerinden yürür: Önce <b>1. Sevkiyat & Kurye Çağırma Ekranından (<button type="button" class="term-badge" onclick="openTerm('DMS')">DMS</button>)</b> paketi kuryeye atayacağız, ardından <b>2. Kuryenin Cep Telefonu Ekranından</b> fişteki <button type="button" class="term-badge" onclick="openTerm('QR_HANDSHAKE')">QR Handshake</button> kodunu okutup teslimatı tamamlayacağız!
+                    </p>
+                </div>
+
+                <!-- ===============================================================
+                     SCREEN 6A: KURYE ÇAĞIRMA & SEVKİYAT YÖNETİM EKRANI (DISPATCH INTERFACE)
+                     =============================================================== -->
+                <div class="rounded-2xl border-2 border-slate-300 bg-white shadow-md overflow-hidden">
+                    <!-- Dispatch Header -->
+                    <div class="bg-slate-800 text-white px-3.5 py-2 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-tower-broadcast text-sky-400 text-xs"></i>
+                            <span class="text-xs font-extrabold">1. Kurye Çağırma & Sevkiyat Ekranı (DMS Panel)</span>
+                        </div>
+                        <button type="button" class="term-badge" onclick="openTerm('DMS')">DMS</button>
+                    </div>
+
+                    <div class="p-3.5 space-y-3 bg-slate-50">
+                        <!-- Ready Package Card -->
+                        <div class="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between shadow-sm">
+                            <div>
+                                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">TEZGAHTA HAZIR PAKET</span>
+                                <div class="text-xs font-extrabold text-slate-900 mt-0.5">Fiş #1042 • Ahmet Yılmaz</div>
+                                <div class="text-[10px] text-slate-600">Kurtuluş Mah. (1.4 km) • <b id="dispatchPayTypeLabel" class="text-emerald-700">ONLINE ÖDENDİ</b></div>
+                            </div>
+                            <i class="fa-solid fa-bag-shopping text-orange-500 text-xl"></i>
+                        </div>
+
+                        <!-- Courier Selection (Restaurant's own courier vs Shared Pool Courier) -->
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-extrabold uppercase text-slate-600 block">
+                                Çağrılacak Kuryeyi Seçin (Restoran Kuryesi veya Ortak Havuz):
+                            </label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="courierSelectBtn-1" onclick="selectCourierCandidate(1)" class="p-2.5 rounded-xl border-2 border-purple-600 bg-purple-50/70 text-left transition">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-600 text-white">ORTAK HAVUZ</span>
+                                        <span class="text-[10px] font-mono font-bold text-emerald-700">120m</span>
+                                    </div>
+                                    <div class="text-xs font-extrabold text-slate-900 mt-1">🏍️ Burak K.</div>
+                                    <div class="text-[10px] text-slate-600">39 AB 104 • Müsait</div>
+                                </button>
+
+                                <button type="button" id="courierSelectBtn-2" onclick="selectCourierCandidate(2)" class="p-2.5 rounded-xl border border-slate-200 bg-white text-left transition">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">RESTORAN KURYESİ</span>
+                                        <span class="text-[10px] font-mono font-bold text-slate-600">Dükkan Önü</span>
+                                    </div>
+                                    <div class="text-xs font-extrabold text-slate-900 mt-1">🛵 Emre T.</div>
+                                    <div class="text-[10px] text-slate-600">Kendi Kuryesi • Müsait</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dispatch Action Button -->
+                        <button type="button" id="btnDispatchCallCourier" onclick="dispatchStep0CallCourier()" class="w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-purple-600 active:bg-purple-700 text-white font-extrabold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span id="btnDispatchCallCourierText">Seçili Kuryeye Çağrı Gönder & Paketi Ata</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===============================================================
+                     SCREEN 6B: KURYE CEP UYGULAMASI (COURIER SMARTPHONE UI)
+                     =============================================================== -->
+                <div class="bg-slate-200 border-4 border-slate-300 rounded-[2rem] p-3 shadow-lg space-y-2.5">
+                    <div class="w-20 h-2.5 bg-slate-400 rounded-full mx-auto"></div>
+
+                    <div class="bg-white rounded-2xl p-3.5 border border-slate-200 space-y-3 shadow-sm">
+                        <!-- Courier Header -->
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl bg-purple-100 border border-purple-200 text-purple-700 flex items-center justify-center">
+                                    <i class="fa-solid fa-helmet-safety"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-extrabold text-slate-900">2. Kurye Cep Uygulaması</div>
+                                    <div id="courierAppActiveName" class="text-[10px] text-emerald-700 font-semibold">● Burak K. (39 AB 104)</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-700 font-bold">Görev #1042</span>
+                        </div>
+
+                        <!-- Incoming Courier Ring Alert Banner -->
+                        <div id="courierIncomingRingBanner" class="hidden p-2.5 rounded-xl bg-purple-50 border-2 border-purple-400 flex items-center justify-between animate-pulse">
+                            <div class="text-[11px] font-bold text-purple-950">
+                                🔔 <b>YENİ PAKET ÇAĞRISI!</b> Odun Ateşi Lahmacun (120m)
+                            </div>
+                            <span class="text-[9px] font-mono bg-purple-600 text-white px-1.5 py-0.5 rounded">ŞİMDİ</span>
+                        </div>
+
+                        <!-- Simulated QR Camera Viewfinder Overlay (Hidden until Step 2 clicked) -->
+                        <div id="qrCameraScannerBox" class="hidden relative h-40 rounded-2xl bg-slate-900 border-2 border-emerald-500 overflow-hidden flex flex-col items-center justify-center p-3">
+                            <div class="laser-line"></div>
+                            <i class="fa-solid fa-qrcode text-5xl text-emerald-400 mb-2"></i>
+                            <div class="text-xs font-mono font-bold text-emerald-300 text-center">
+                                Fişteki QR Barkod Okunuyor...
+                            </div>
+                            <div class="text-[10px] text-slate-300">Müşteri Adresi & Navigasyon Kurye Telefonuna Aktarılıyor</div>
+                        </div>
+
+                        <!-- Live Animated Mobile Delivery Map (Light Mode Map!) -->
+                        <div class="relative h-36 rounded-2xl bg-sky-50 border border-sky-200 p-3 flex flex-col justify-between overflow-hidden">
+                            <div class="absolute inset-0 opacity-35" style="background-image: radial-gradient(#0284c7 1px, transparent 1px); background-size: 14px 14px;"></div>
+
+                            <div class="relative z-10 flex justify-between items-center text-[10px] font-mono font-bold">
+                                <span class="bg-white px-2 py-0.5 rounded border border-slate-300 text-orange-700 shadow-sm">
+                                    <i class="fa-solid fa-store mr-1"></i>Restoran
+                                </span>
+                                <span id="courierEtaBadge" class="text-slate-700 bg-white/80 px-2 py-0.5 rounded">Mesafe: 1.4 km</span>
+                                <span class="bg-white px-2 py-0.5 rounded border border-slate-300 text-emerald-700 shadow-sm">
+                                    <i class="fa-solid fa-house-user mr-1"></i>Müşteri
+                                </span>
+                            </div>
+
+                            <!-- Route Track & Moving Moto Pin -->
+                            <div class="relative z-10 my-auto px-3">
+                                <div class="w-full h-2.5 bg-slate-300 rounded-full relative">
+                                    <div id="courierRouteBar" class="h-2.5 bg-gradient-to-r from-purple-600 via-sky-500 to-emerald-500 rounded-full transition-all duration-700" style="width: 12%;"></div>
+                                    <div id="courierMotoIcon" class="w-8 h-8 rounded-full bg-purple-600 border-2 border-white text-white flex items-center justify-center shadow-md absolute -top-3 transition-all duration-700" style="left: 8%;">
+                                        <i class="fa-solid fa-motorcycle text-xs"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative z-10 flex items-center justify-between text-[10px] font-mono bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">
+                                <span id="courierTelemetryText" class="text-sky-800 font-semibold">Durum: Sevkiyat Çağrısı Bekleniyor</span>
+                                <span id="courierPaymentReminder" class="text-emerald-700 font-extrabold">ONLINE ÖDENDİ</span>
+                            </div>
+                        </div>
+
+                        <!-- 3 Sequential Courier Action Buttons -->
+                        <div class="space-y-2 pt-1">
+                            <button type="button" id="btnCourierAccept" onclick="courierStep1Accept()" class="w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-purple-600 active:bg-purple-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-bell-concierge"></i>
+                                <span>1. Kurye: Çağrıyı Kabul Et & Restorana Gel</span>
+                            </button>
+
+                            <button type="button" id="btnCourierScanQr" onclick="courierStep2ScanQr()" disabled class="w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-sky-600 active:bg-sky-700 disabled:opacity-35 disabled:pointer-events-none text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <span>2. Fişteki QR Kodu Okut & Paketi Teslim Al</span>
+                            </button>
+
+                            <button type="button" id="btnCourierDeliver" onclick="courierStep3Deliver()" disabled class="w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-emerald-600 active:bg-emerald-700 disabled:opacity-35 disabled:pointer-events-none text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-flag-checkered"></i>
+                                <span>3. Müşteriye Teslim Edildi (Döngüyü Tamamla)</span>
+                            </button>
+                        </div>
+
+                        <!-- Final Escrow Release & Loop Completion Banner -->
+                        <div id="finalSuccessCard" class="hidden p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-500 text-center space-y-2">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-2xl"></i>
+                            <div class="text-xs font-extrabold text-slate-900">UÇTAN UCA SİPARİŞ DÖNGÜSÜ TAMAMLANDI!</div>
+                            <p class="text-[11px] text-slate-700 leading-relaxed">
+                                Müşteriye "Afiyet olsun" bildirimi gitti ve <button type="button" class="term-badge" onclick="openTerm('ESCROW')">Escrow (Havuz Hesap)</button> içindeki <b>349.60 TL</b> restoran hak edişi serbest bırakıldı!
+                            </p>
+                            <button type="button" onclick="resetSimulation()" class="w-full py-2.5 rounded-xl bg-white hover:bg-slate-100 text-orange-600 font-extrabold text-xs border border-orange-300 shadow-sm transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Simülasyonu Baştan Dene
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ==================== 3. STICKY THUMB-FRIENDLY BOTTOM NAVIGATION BAR ==================== -->
+        <footer class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3.5 py-2.5 shadow-lg">
+            <div class="flex items-center justify-between gap-2">
+                <!-- Previous Step Button -->
+                <button type="button" id="navPrevBtn" onclick="changeStep(-1)" class="min-h-[44px] px-3.5 rounded-xl bg-slate-100 active:scale-95 disabled:opacity-35 disabled:pointer-events-none border border-slate-300 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span>Önceki</span>
+                </button>
+
+                <!-- Live System Log Drawer Button -->
+                <button type="button" onclick="toggleLogSheet()" class="min-h-[44px] px-3 rounded-xl bg-slate-100 active:scale-95 border border-slate-300 text-[11px] font-mono font-bold text-emerald-700 flex items-center gap-1.5 transition">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
+                    <span>Canlı Log</span>
+                    <span id="logCounterBadge" class="px-1.5 py-0.2 rounded bg-white border border-slate-300 text-slate-800 text-[10px]">1</span>
+                </button>
+
+                <!-- Next Step Button -->
+                <button type="button" id="navNextBtn" onclick="changeStep(1)" class="flex-1 min-h-[44px] px-4 rounded-xl bg-orange-600 active:scale-95 disabled:opacity-35 disabled:pointer-events-none text-xs font-bold text-white shadow-md flex items-center justify-center gap-1.5 transition">
+                    <span id="navNextBtnText">Sonraki Aşama</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- ==================== 4. INTERACTIVE ACRONYM BOTTOM SHEET (AYDINLIK KISALTMA KARTI) ==================== -->
+    <div id="termBottomSheetBackdrop" onclick="closeTermSheet()" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity">
+        <div onclick="event.stopPropagation()" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t-4 border-sky-600 rounded-t-3xl p-5 shadow-2xl space-y-3.5 max-h-[85dvh] overflow-y-auto">
+            <!-- Drag Handle -->
+            <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto -mt-1 mb-1"></div>
+
+            <div class="flex items-start justify-between gap-3 border-b border-slate-200 pb-3">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="sheetTermAbbr" class="text-xs font-mono font-extrabold px-2.5 py-0.5 rounded-lg bg-sky-100 text-sky-800 border border-sky-300">POS</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tıklanabilir Terim Kartı</span>
+                    </div>
+                    <h3 id="sheetTermFullTitle" class="text-sm sm:text-base font-extrabold text-slate-900 mt-1">Point of Sale — Satış Noktası Terminali</h3>
+                </div>
+                <button type="button" onclick="closeTermSheet()" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-2.5 text-xs leading-relaxed">
+                <!-- 1. Simple Everyday Explanation -->
+                <div class="p-3 rounded-2xl bg-sky-50/70 border border-sky-200">
+                    <div class="text-[10px] font-extrabold uppercase text-sky-800 mb-1">
+                        <i class="fa-solid fa-lightbulb mr-1"></i>Hiç Bilmeyenler İçin Basit Anlatım:
+                    </div>
+                    <p id="sheetTermSimple" class="text-slate-800"></p>
+                </div>
+
+                <!-- 2. Role in our Food Delivery System -->
+                <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                    <div class="text-[10px] font-extrabold uppercase text-emerald-800 mb-1">
+                        <i class="fa-solid fa-gears mr-1"></i>Bizim Sistemimizdeki Görevi:
+                    </div>
+                    <p id="sheetTermRole" class="text-slate-800"></p>
+                </div>
+
+                <!-- 3. Cost / Workaround / Backdoor Secret -->
+                <div class="p-3 rounded-2xl bg-orange-50 border border-orange-200">
+                    <div class="text-[10px] font-extrabold uppercase text-orange-800 mb-1">
+                        <i class="fa-solid fa-key mr-1"></i>Maliyet & "Arka Kapı" (Workaround) Sırrı:
+                    </div>
+                    <p id="sheetTermWorkaround" class="text-slate-900 font-medium"></p>
+                </div>
+            </div>
+
+            <button type="button" onclick="closeTermSheet()" class="w-full min-h-[46px] py-3 rounded-xl bg-sky-600 active:bg-sky-700 text-white font-extrabold text-xs transition shadow-md">
+                Anladım, Rehbere Devam Et
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== 5. LIVE SYSTEM LOGS BOTTOM DRAWER ==================== -->
+    <div id="logSheetBackdrop" onclick="toggleLogSheet()" class="fixed inset-0 z-40 hidden bg-slate-900/50 backdrop-blur-sm">
+        <div onclick="event.stopPropagation()" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t-2 border-slate-300 rounded-t-3xl p-4 shadow-2xl space-y-3 max-h-[70dvh] flex flex-col">
+            <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto"></div>
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="text-xs font-mono font-extrabold text-emerald-700">
+                    <i class="fa-solid fa-terminal mr-1"></i>Canlı Arka Plan Sistem Kayıtları
+                </span>
+                <button type="button" onclick="toggleLogSheet()" class="text-xs font-bold text-slate-600 px-2.5 py-1 rounded bg-slate-100">Kapat</button>
+            </div>
+            <div id="mobileLogList" class="flex-1 overflow-y-auto space-y-2 font-mono text-[11px]">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ENGINE ==================== -->
+    <script>
+        // --- 1. APPLICATION STATE ---
+        let currentStep = 1;
+        let soundEnabled = true;
+        let paymentMode = 'ONLINE'; // 'ONLINE' or 'KAPIDA'
+        let bridgeMethod = '1'; // '1' to '7'
+        let selectedCourierId = 1; // 1: Burak K. (Havuz), 2: Emre T. (Restoran)
+        let posOrderArrived = false; // Starts in normal idle POS view so user can see before & after
+        let logCount = 0;
+
+        const menuItems = [
+            { id: 1, name: 'Odun Ateşinde Lahmacun (Acılı)', price: 110, qty: 2 },
+            { id: 2, name: 'Yayık Ayranı (Büyük Bakır Maşrapa)', price: 45, qty: 1 },
+            { id: 3, name: 'Sıcak Antep Künefe (Kaymaklı)', price: 115, qty: 1 }
+        ];
+
+        const stageTitles = [
+            "1. Müşteri Girişi & Doğrulama",
+            "2. Sepet & Sipariş Oluşturma",
+            "3. Ödeme Emri Nereye Gider?",
+            "4. Restoran Arka Kapı Köprüsü",
+            "5. SambaPOS Ekranı, Fiş & Mutfak",
+            "6. Kurye Çağırma (DMS) & Kurye App"
+        ];
+
+        const stepCompleted = [false, false, false, false, false, false];
+
+        // --- 2. CLICKABLE ACRONYM & TERM DATABASE ---
+        const termsDatabase = {
+            'OTP': {
+                abbr: 'OTP',
+                full: 'One-Time Password — Tek Kullanımlık Doğrulama Şifresi',
+                simple: 'Uygulamaya girerken telefonuna SMS ile gelen 4 haneli geçici koddur. Şifre unutma derdini bitirir.',
+                role: 'Müşterinin gerçek bir cep telefonu sahibi olduğunu doğrular, sahte (fake) siparişleri %99 oranında engeller.',
+                workaround: 'Her girişte SMS parası ödememek için ilk OTP doğrulamasından sonra müşterinin telefonuna JWT kimliği verilir.'
+            },
+            'JWT': {
+                abbr: 'JWT',
+                full: 'JSON Web Token — Şifreli Dijital Oturum Kartı',
+                simple: 'Bir otele giriş yaptığında bileğine takılan "Her Şey Dahil" bilekliği gibidir. Uygulamayı her açtığında tekrar kimlik sormadan seni tanır.',
+                role: 'OTP kodu onaylandığı an sunucumuz müşterinin telefonuna bu şifreli metni kaydeder. Müşteri 90 gün boyunca tek dokunuşla sipariş verir.',
+                workaround: 'Sunucuda ekstra oturum belleği tüketmez ve tekrarlanan SMS doğrulama maliyetini sıfıra indirir.'
+            },
+            'SANAL_POS': {
+                abbr: 'Sanal POS',
+                full: 'Virtual Point of Sale — Online Kart Tahsilat Altyapısı',
+                simple: 'Marketlerdeki fiziksel kredi kartı cihazının internet içindeki görünmez halidir (Örn: Iyzico, PayTR, Param, Sipay).',
+                role: 'Çok Kritik: Müşterinin ödeme emri ve kart bilgisi ASLA restoranın yazılımına gitmez! Doğrudan Sanal POS kuruluşuna gider.',
+                workaround: 'Tek tek bankalarla uğraşmak yerine BDDK lisanslı Pazaryeri Sanal POS (Iyzico/PayTR) kullanılır; komisyon ve restoran ödemesi otomatik ayrıştırılır.'
+            },
+            '3D_SECURE': {
+                abbr: '3D Secure',
+                full: 'Three-Domain Secure — Banka SMS Güvenlik Katmanı',
+                simple: 'Online alışverişte kart bilgilerini girdikten sonra bankanın kendi ekranının açılıp telefonuna onay SMS\'i göndermesidir.',
+                role: 'Çalıntı kartla yemek siparişi verilmesini (ters ibraz dolandırıcılığını) tamamen engeller.',
+                workaround: 'Sanal POS üzerinde 3D Secure zorunlu tutularak tüm finansal sorumluluk banka güvencesine alınır.'
+            },
+            'ESCROW': {
+                abbr: 'Escrow (Havuz Hesap)',
+                full: 'Pazaryeri Emanet & Komisyon Ayrıştırma Havuzu',
+                simple: 'Müşteri kartla ödeme yaptığında paranın doğrudan restorana veya bize değil, Merkez Bankası denetimindeki güvenli bir ortak havuza girmesidir.',
+                role: 'Örn: 380 TL çekildiğinde sistem otomatik olarak 30.40 TL (%8) platform komisyonunu bize, 349.60 TL\'yi ise restoranın IBAN\'ına ayırır. Sipariş teslim edilince parayı serbest bırakır.',
+                workaround: 'Pazaryeri Sanal POS API\'si bu bölüştürmeyi (Split Payment) arka planda otomatik yaptığı için muhasebe yükü oluşturmaz.'
+            },
+            'WEBHOOK': {
+                abbr: 'Webhook',
+                full: 'Olay Tetiklemeli Sunucular Arası Anlık Bildirim',
+                simple: 'Sanal POS firmasının bizim sunucumuzun omzuna dokunup "Hey! Müşterinin kartından 380 TL\'yi başarıyla çektim, şimdi siparişi restorana gönderebilirsin" demesidir.',
+                role: 'Ödeme onayı alındığı salise sunucumuzu tetikler ve restoranın SambaPOS ekranına "ONLINE ÖDENDİ - Müşteriden para istemeyin" mesajını yollar.',
+                workaround: 'Sahte ödeme bildirimlerini önlemek için Webhook mesajları gizli bir kriptografik imza (HMAC) ile doğrulanır.'
+            },
+            'POS': {
+                abbr: 'POS',
+                full: 'Point of Sale — Restoran Kasa & Adisyon Yazılımı (SambaPOS vb.)',
+                simple: 'Restoranın kasasındaki dokunmatik bilgisayarda çalışan, masa ve paket hesaplarını tutan programdır (Örn: SambaPOS V5, Adisyo, Kerzz).',
+                role: 'Restoran kasiyeri gelen siparişleri bu ekranda görür, onaylar ve buradaki yazıcıdan fiş çıkarır.',
+                workaround: 'Hazır POS firmaları dışarıdan sipariş almak için yüksek API ücreti (Paywall) ister. Biz bunu 7 farklı arka kapı yöntemiyle ücretsiz aşarız!'
+            },
+            'API_PAYWALL': {
+                abbr: 'API Paywall',
+                full: 'Yazılım Entegrasyon Ücreti Duvarı (Kapalı Sistem Haracı)',
+                simple: 'Restoranın kullandığı kasa programının, dışarıdan sipariş kabul etmek için istediği yüksek aylık lisans/entegrasyon ücretidir.',
+                role: 'Yerel bir girişim her restoran için başka bir yazılım şirketine aylık binlerce lira ödeyemez.',
+                workaround: 'Çözüm: Always-on-Top yüzen pencere, SambaPOS yerel GraphQL (Port 9000), Port 9100 doğrudan fiş basımı veya Caller ID taklididir!'
+            },
+            'ESCPOS': {
+                abbr: 'ESC/POS',
+                full: 'Epson Standard Code for POS — Termal Fiş Yazıcı Dili',
+                simple: 'Dünyadaki tüm termal fiş yazıcıların konuştuğu ortak makine dilidir. "Kalın yaz, QR kod bas, kağıdı kes" emirlerini içerir.',
+                role: 'Sipariş onaylandığı an mutfaktaki veya kasadaki yazıcıdan 1 saniyede düzenli kağıt fiş çıkmasını sağlar.',
+                workaround: 'POS programı kapalı kutu olsa bile yazıcı her zaman ESC/POS emirlerini dinler ve fişi basar.'
+            },
+            'PORT_9100': {
+                abbr: 'Port 9100',
+                full: 'Raw TCP Printing Port — Doğrudan Ağ Yazıcısı Kapısı',
+                simple: 'Restorandaki fiş yazıcılarının yerel Wi-Fi/Ethernet ağında sürekli açık bıraktığı standart veri kapısıdır (kapı numarası 9100).',
+                role: 'Kasadaki mini köprü programımız siparişi alır almaz Port 9100 kapısından doğrudan yazıcıya gönderir.',
+                workaround: 'Hiçbir POS yazılım firmasına API parası ödemeden restoranın kendi yazıcısından resmi sipariş fişi çıkarmamızı sağlar.'
+            },
+            'RPA': {
+                abbr: 'RPA',
+                full: 'Robotic Process Automation — Otomatik Ekran Tuşlama Ajanı',
+                simple: 'Bilgisayarın içinde yaşayan görünmez, süper hızlı bir yardımcı kasiyer gibidir. İnsan eli değmeden fareyi hareket ettirip ekrandaki yemek tuşlarına basar.',
+                role: 'Restoran sahibi "Siparişler benim POS programımın içine de otomatik tuşlansın" derse, RPA ajanımız siparişi 1 saniyede ekrana tuşlar.',
+                workaround: 'Tamamen ücretsizdir; API Paywall duvarını yazılımın ön yüzünden (UI üzerinden) dolaşarak aşar.'
+            },
+            'KDS': {
+                abbr: 'KDS',
+                full: 'Kitchen Display System — Mutfak Hazırlık Ekranı',
+                simple: 'Mutfakta ızgaranın veya fırının üstünde duran tablettir. Usta hangi yemeğin sırada olduğunu ve müşteri notunu buradan görür.',
+                role: 'Usta yemeği paketleyip KDS ekranında "Paket Hazır" butonuna dokunduğu an Sevkiyat (DMS) ekranına uyarı düşer.',
+                workaround: 'Restorana pahalı KDS donanımı aldırmak yerine, herhangi bir uygun fiyatlı tabletten bizim Web KDS ekranımızı açtırırız.'
+            },
+            'DMS': {
+                abbr: 'DMS',
+                full: 'Delivery Management System — Kurye Çağırma & Sevkiyat Yönetimi',
+                simple: 'Hazırlanan yemek paketini restoranın kendi kuryesine veya bölgedeki ortak havuz kuryesine atayan, harita ve varış süresini yöneten sevkiyat ekranıdır.',
+                role: 'Restorandaki sevkiyat ekranından kuryeye çağrı gönderir, kuryenin telefonuna görev düşürür ve canlı GPS takibi başlatır.',
+                workaround: 'Google Maps\'e yüksek dolar faturası ödemek yerine ücretsiz açık kaynak OpenStreetMap + OSRM rota motoru kullanılır.'
+            },
+            'QR_HANDSHAKE': {
+                abbr: 'QR Handshake',
+                full: 'Karekod ile Fiziksel Paket & Kurye Eşleştirme',
+                simple: 'Termal yazıcıdan çıkan fişin en altına basılan özel karekoddur. Kurye paketi alırken telefon kamerasıyla bu kodu okutur.',
+                role: 'Kuryenin yanlış poşeti almasını engeller, kuryeye tek dokunuşla müşterinin harita konumunu açar ve müşteriye "Kuryeniz yola çıktı" bildirimi atar.',
+                workaround: 'Restoranın kendi kuryesi olsa bile hiçbir karmaşık entegrasyon gerektirmeden kağıt fiş üzerinden dijital takip başlatır!'
+            },
+            'ALWAYS_ON_TOP': {
+                abbr: 'Always-on-Top',
+                full: 'Windows Topmost Overlay — Her Zaman Üstte Kalan Yüzen Katman',
+                simple: 'Arkada SambaPOS veya başka bir kasa programı açıkken asla alta düşmeyen, hep ekranın en üstünde görünen kendi mini sipariş penceremizdir.',
+                role: 'Restoran kasiyeri SambaPOS\'ta çalışırken sipariş geldiği an ekranın en üstünde sesli bildirim kartımızı gösterir ve tek tıkla fiş bastırır.',
+                workaround: 'En zahmetsiz ve %100 garantili çözümdür! Restoranın mevcut POS yazılımına hiç dokunmadan aynı bilgisayar ekranında var olmamızı sağlar.'
+            },
+            'GRAPHQL': {
+                abbr: 'GraphQL',
+                full: 'SambaPOS Local GraphQL API & Message Server (Port 9000)',
+                simple: 'SambaPOS V5 programının kendi içinde bulunan, yerel ağdan (localhost:9000) doğrudan sipariş ve adisyon eklemeye yarayan resmi sorgu kapısıdır.',
+                role: 'Kasadaki mini köprü programımız SambaPOS\'a "mutation { addTicket(...) }" komutu göndererek siparişi doğrudan SambaPOS\'un kendi Adisyon ve Paket Servis ekranına düşürür.',
+                workaround: 'SambaPOS\'un bulut entegratörlerine her ay düzenli komisyon/lisans ödemek yerine, kasa bilgisayarının içinden yerel GraphQL API\'sine bağlanarak 0 TL maliyetle tam entegrasyon sağlarız!'
+            },
+            'MSSQL': {
+                abbr: 'MS SQL',
+                full: 'Microsoft SQL Server — Yerel POS Veritabanı Enjeksiyonu',
+                simple: 'SambaPOS, Vega, NarPOS gibi kasa programlarının tüm adisyonları ve müşteri kayıtlarını bilgisayarın içinde sakladığı veritabanıdır.',
+                role: 'Eğer POS programının API kapısı kapalıysa, kendi mini servisimiz doğrudan MS SQL içindeki "dbo.Tickets" ve "dbo.Orders" tablolarına siparişi yazar.',
+                workaround: 'Yazılım firmasına hiçbir entegrasyon ücreti ödemeden siparişin doğrudan restoranın kendi adisyon listesinde görünmesini sağlar.'
+            },
+            'CALLER_ID': {
+                abbr: 'Caller ID COM',
+                full: 'Virtual Serial Port Caller ID — Telefon Çalıyor Taklidi',
+                simple: 'SambaPOS ve diğer kasa programlarında sabit telefon çaldığında sağ altta "Ahmet Yılmaz Arıyor" diye pencere açan Caller ID cihazının yazılımsal olarak taklit edilmesidir.',
+                role: 'Uygulamamızdan sipariş geldiği an SambaPOS\'a sanki telefon çalıyormuş gibi müşterinin numarasını göndeririz. Kasiyer pop-up\'a tıkladığı an müşterinin adisyon ekranı açılır!',
+                workaround: 'En eski veya kapalı kutu paket servis programlarını bile tek kuruş ödemeden tetiklemenin en yaratıcı arka kapı yoludur.'
+            },
+            'DOM_INJECTION': {
+                abbr: 'DOM Injection',
+                full: 'Chrome Extension DOM Bridge — Web POS Ekran Yamama',
+                simple: 'Adisyo, Kerzz Cloud gibi Google Chrome üzerinden çalışan bulut POS programlarının ekranına kendi Chrome eklentimizle bildirim barı eklememizdir.',
+                role: 'Restoranın açık olan POS ekranının en üstüne bizim "Yeni Sipariş Geldi" barımızı yerleştirir ve RPA ile sipariş kalemlerini ekrana otomatik tuşlar.',
+                workaround: 'Bilgisayarda yerel veritabanı olmayan %100 bulut tabanlı POS yazılımlarında API Paywall duvarını tarayıcı içinden ücretsiz aşmamızı sağlar.'
+            }
+        };
+
+        // --- 3. WEB AUDIO SYNTHESIS ENGINE ---
+        let audioCtx = null;
+        function ensureAudio() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSfx(type) {
+            if (!soundEnabled) return;
+            try {
+                ensureAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+
+                if (type === 'tap') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(620, now);
+                    osc.frequency.exponentialRampToValueAtTime(840, now + 0.08);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+                } else if (type === 'sms') {
+                    [784, 1046.5].forEach((f, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(f, now + i * 0.12);
+                        gain.gain.setValueAtTime(0.11, now + i * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.18);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.12);
+                        osc.stop(now + i * 0.12 + 0.18);
+                    });
+                } else if (type === 'alarm') {
+                    [587.33, 880, 587.33, 880].forEach((f, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(f, now + i * 0.13);
+                        gain.gain.setValueAtTime(0.08, now + i * 0.13);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.13 + 0.12);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.13);
+                        osc.stop(now + i * 0.13 + 0.12);
+                    });
+                } else if (type === 'printer') {
+                    for (let i = 0; i < 16; i++) {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(240 + (i % 4) * 35, now + i * 0.055);
+                        gain.gain.setValueAtTime(0.05, now + i * 0.055);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.055 + 0.04);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.055);
+                        osc.stop(now + i * 0.055 + 0.045);
+                    }
+                } else if (type === 'scan') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(1480, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.16);
+                } else if (type === 'success') {
+                    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(f, now + i * 0.08);
+                        gain.gain.setValueAtTime(0.09, now + i * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.22);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.08);
+                        osc.stop(now + i * 0.08 + 0.22);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-emerald-600 text-xs';
+                playSfx('tap');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-slate-400 text-xs';
+            }
+        }
+
+        // --- 4. CLICKABLE TERM BOTTOM SHEET CONTROLLER ---
+        function openTerm(key) {
+            const item = termsDatabase[key];
+            if (!item) return;
+            playSfx('tap');
+
+            document.getElementById('sheetTermAbbr').textContent = item.abbr;
+            document.getElementById('sheetTermFullTitle').textContent = item.full;
+            document.getElementById('sheetTermSimple').textContent = item.simple;
+            document.getElementById('sheetTermRole').textContent = item.role;
+            document.getElementById('sheetTermWorkaround').textContent = item.workaround;
+
+            document.getElementById('termBottomSheetBackdrop').classList.remove('hidden');
+        }
+
+        function closeTermSheet() {
+            document.getElementById('termBottomSheetBackdrop').classList.add('hidden');
+            playSfx('tap');
+        }
+
+        // --- 5. LIVE LOGGING SYSTEM ---
+        function appendLog(tag, msg, color = 'text-emerald-700') {
+            logCount++;
+            document.getElementById('logCounterBadge').textContent = logCount;
+            const list = document.getElementById('mobileLogList');
+            const time = new Date().toLocaleTimeString('tr-TR', { hour12: false });
+
+            const entry = document.createElement('div');
+            entry.className = 'p-2.5 rounded-xl bg-slate-50 border border-slate-200';
+            entry.innerHTML = `
+                <div class="flex items-center justify-between text-[10px] text-slate-500 mb-0.5">
+                    <span class="font-extrabold ${color}">[${tag}]</span>
+                    <span>${time}</span>
+                </div>
+                <div class="text-slate-800 leading-snug">${msg}</div>
+            `;
+            list.prepend(entry);
+        }
+
+        function toggleLogSheet() {
+            document.getElementById('logSheetBackdrop').classList.toggle('hidden');
+            playSfx('tap');
+        }
+
+        // --- 6. STEP NAVIGATION & PROGRESS CONTROLLER ---
+        function renderStepDots() {
+            const container = document.getElementById('mobileStepDots');
+            const shortLabels = ['1.Giriş', '2.Sepet', '3.Ödeme', '4.Köprü', '5.SambaPOS', '6.Kurye'];
+            container.innerHTML = shortLabels.map((lbl, idx) => {
+                const stepNum = idx + 1;
+                const isActive = stepNum === currentStep;
+                const isDone = stepCompleted[idx];
+
+                let cls = 'bg-slate-100 text-slate-600 border-slate-200 font-medium';
+                if (isActive) {
+                    cls = 'bg-orange-600 text-white border-orange-600 font-extrabold shadow-sm';
+                } else if (isDone) {
+                    cls = 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold';
+                }
+
+                return `
+                    <button type="button" onclick="goToStep(${stepNum})" class="py-1.5 px-1 rounded-lg border text-[10px] truncate transition active:scale-95 ${cls}">
+                        ${lbl}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function goToStep(stepNumber) {
+            if (stepNumber < 1 || stepNumber > 6) return;
+            currentStep = stepNumber;
+            playSfx('tap');
+
+            for (let i = 1; i <= 6; i++) {
+                const sec = document.getElementById(`stage-${i}`);
+                if (sec) {
+                    if (i === currentStep) sec.classList.remove('hidden');
+                    else sec.classList.add('hidden');
+                }
+            }
+
+            document.getElementById('headerStagePill').textContent = `AŞAMA ${currentStep}/6`;
+            document.getElementById('headerStageTitle').textContent = stageTitles[currentStep - 1];
+
+            document.getElementById('navPrevBtn').disabled = (currentStep === 1);
+            const nextBtn = document.getElementById('navNextBtn');
+            const nextText = document.getElementById('navNextBtnText');
+            if (currentStep === 6) {
+                nextBtn.disabled = true;
+                nextText.textContent = 'Son Aşama';
+            } else {
+                nextBtn.disabled = false;
+                nextText.textContent = `Aşama ${currentStep + 1}'e Geç`;
+            }
+
+            if (currentStep === 3) syncStage3Calculations();
+            if (currentStep === 4) selectBridgeMethod(bridgeMethod, true);
+            if (currentStep === 5) syncStage5Data();
+            if (currentStep === 6) syncStage6Data();
+
+            renderStepDots();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function changeStep(delta) {
+            goToStep(currentStep + delta);
+        }
+
+        // --- 7. STAGE 1 LOGIC: SMS OTP & JWT ---
+        function triggerSmsSimulation() {
+            playSfx('sms');
+            document.getElementById('smsDropNotification').classList.remove('hidden');
+            document.getElementById('authViewPhone').classList.add('hidden');
+            document.getElementById('authViewOtp').classList.remove('hidden');
+            appendLog('OTP SMS', '+90 532 190 3939 numarasına tek kullanımlık OTP kodu (4829) gönderildi.', 'text-sky-700');
+        }
+
+        function fillOtpAndVerify() {
+            playSfx('success');
+            document.getElementById('smsDropNotification').classList.add('hidden');
+            document.getElementById('authViewOtp').classList.add('hidden');
+            document.getElementById('authViewSuccess').classList.remove('hidden');
+            stepCompleted[0] = true;
+            renderStepDots();
+            appendLog('JWT AUTH', 'OTP doğrulandı. Cihaza 90 günlük JWT oturum jetonu kaydedildi.', 'text-emerald-700');
+        }
+
+        // --- 8. STAGE 2 LOGIC: MENU & CART ---
+        function getCartTotal() {
+            return menuItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        }
+
+        function renderMobileMenu() {
+            const container = document.getElementById('mobileMenuContainer');
+            if (!container) return;
+
+            container.innerHTML = menuItems.map(item => `
+                <div class="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <div class="text-xs font-extrabold text-slate-900 truncate">${item.name}</div>
+                        <div class="text-[11px] font-mono font-bold text-orange-600">${item.price} TL / adet</div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl border border-slate-300 shrink-0 shadow-sm">
+                        <button type="button" onclick="changeQty(${item.id}, -1)" class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center active:scale-90">-</button>
+                        <span class="font-mono text-xs font-extrabold text-slate-900 w-4 text-center">${item.qty}</span>
+                        <button type="button" onclick="changeQty(${item.id}, 1)" class="w-6 h-6 rounded-lg bg-orange-600 text-white font-bold text-xs flex items-center justify-center active:scale-90">+</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const total = getCartTotal();
+            document.getElementById('stage2TotalAmount').textContent = `${total} TL`;
+        }
+
+        function changeQty(id, delta) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+            const nextQty = item.qty + delta;
+            if (nextQty < 0) return;
+            if (nextQty === 0 && menuItems.reduce((s, x) => s + x.qty, 0) <= 1) return;
+            item.qty = nextQty;
+            playSfx('tap');
+            renderMobileMenu();
+        }
+
+        function setQuickNote(txt) {
+            document.getElementById('orderNoteInput').value = txt;
+            playSfx('tap');
+        }
+
+        function confirmCartGoToPayment() {
+            stepCompleted[1] = true;
+            const total = getCartTotal();
+            appendLog('SEPET ONAYI', `Sipariş #1042 oluşturuldu. Tutar: ${total} TL.`, 'text-orange-600');
+            goToStep(3);
+        }
+
+        // --- 9. STAGE 3 LOGIC: PAYMENT & DATA SPLIT ---
+        function selectPaymentMode(mode) {
+            paymentMode = mode;
+            playSfx('tap');
+            const onlineBtn = document.getElementById('payModeOnlineBtn');
+            const doorBtn = document.getElementById('payModeDoorBtn');
+            const onlineTag = document.getElementById('payModeOnlineTag');
+            const doorTag = document.getElementById('payModeDoorTag');
+
+            if (mode === 'ONLINE') {
+                onlineBtn.className = 'p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/70 text-left transition active:scale-95 shadow-sm';
+                doorBtn.className = 'p-3 rounded-2xl border border-slate-300 bg-white text-left transition active:scale-95 shadow-sm';
+                onlineTag.classList.remove('hidden');
+                doorTag.classList.add('hidden');
+            } else {
+                doorBtn.className = 'p-3 rounded-2xl border-2 border-amber-500 bg-amber-50/70 text-left transition active:scale-95 shadow-sm';
+                onlineBtn.className = 'p-3 rounded-2xl border border-slate-300 bg-white text-left transition active:scale-95 shadow-sm';
+                doorTag.classList.remove('hidden');
+                onlineTag.classList.add('hidden');
+            }
+            syncStage3Calculations();
+        }
+
+        function syncStage3Calculations() {
+            const total = getCartTotal();
+            const comm = (total * 0.08).toFixed(2);
+            const net = (total * 0.92).toFixed(2);
+            const note = document.getElementById('orderNoteInput').value || 'Not yok';
+
+            document.getElementById('stage3OrderSummaryText').textContent = `Sipariş #1042 • ${total.toFixed(2)} TL`;
+            document.getElementById('finTotalVal').textContent = `${total.toFixed(2)} TL`;
+            document.getElementById('finCommissionVal').textContent = `-${comm} TL`;
+            document.getElementById('finNetVal').textContent = `${net} TL`;
+            document.getElementById('jsonNoteText').textContent = note.substring(0, 32) + (note.length > 32 ? '...' : '');
+
+            const jsonPay = document.getElementById('jsonPayStatusText');
+            if (paymentMode === 'ONLINE') {
+                jsonPay.textContent = '"ONLINE_ODENDI (TAHSİLAT YAPMA!)"';
+                jsonPay.className = 'text-emerald-400 font-bold';
+            } else {
+                jsonPay.textContent = `"KAPIDA_TAHSIL_ET (${total.toFixed(2)} TL)"`;
+                jsonPay.className = 'text-amber-400 font-bold';
+            }
+        }
+
+        function animatePaymentSplitFlow() {
+            playSfx('success');
+            stepCompleted[2] = true;
+            renderStepDots();
+
+            const finCard = document.getElementById('flowCardFinancial');
+            const opCard = document.getElementById('flowCardOperational');
+            finCard.classList.add('ring-2', 'ring-emerald-500');
+            opCard.classList.add('ring-2', 'ring-sky-500');
+
+            document.getElementById('stage3ProceedBox').classList.remove('hidden');
+            appendLog('SANAL POS & WEBHOOK', `Ödeme emri Sanal POS havuzuna, sipariş içeriği ise restorana ayrıştırılarak iletildi.`, 'text-emerald-700');
+        }
+
+        // --- 10. STAGE 4 LOGIC: 7 REAL-WORLD RESTAURANT INTEGRATION & BACKDOOR METHODS ---
+        const integrationMethodsData = {
+            '1': {
+                badge: 'Yöntem 1: Always-on-Top',
+                shortName: 'Always-on-Top Yüzen Pencere',
+                borderColor: 'border-emerald-500',
+                sambaHeaderText: 'Always-on-Top Ajanı: Aktif',
+                html: `
+                    <div class="text-xs font-extrabold text-emerald-800 flex items-center justify-between">
+                        <span><i class="fa-solid fa-layer-group mr-1"></i> Yöntem 1: Kendi "Always-on-Top" Programımız</span>
+                        <span class="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Sıfır Entegrasyon</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Kasa bilgisayarına (Windows) 5 MB'lık kendi bildirim programımızı kurarız. Windows'un <button type="button" class="term-badge" onclick="openTerm('ALWAYS_ON_TOP')">Always-on-Top</button> (<code>Topmost = true</code>) özelliği sayesinde arkada <b>SambaPOS</b> açıkken bile ekranın en üst katmanında bizim canlı sipariş penceremiz açılır ve tek tıkla <button type="button" class="term-badge" onclick="openTerm('PORT_9100')">Port 9100</button> üzerinden yazıcıdan fiş çıkarır!
+                    </p>
+                `,
+                stage5ContextHtml: `
+                    <div class="font-extrabold text-emerald-800 mb-0.5"><i class="fa-solid fa-thumbtack mr-1"></i>Always-on-Top Modu:</div>
+                    <div>Üst katman penceremiz SambaPOS üzerinde açıldı. Tek tıkla <button type="button" class="term-badge" onclick="openTerm('PORT_9100')">Port 9100</button> fişi basılır.</div>
+                `
+            },
+            '2': {
+                badge: 'Yöntem 2: SambaPOS GraphQL',
+                shortName: 'SambaPOS Yerel GraphQL API',
+                borderColor: 'border-sky-500',
+                sambaHeaderText: 'Message Server: Port 9000 (GraphQL)',
+                html: `
+                    <div class="text-xs font-extrabold text-sky-800 flex items-center justify-between">
+                        <span><i class="fa-solid fa-code-branch mr-1"></i> Yöntem 2: SambaPOS Yerel GraphQL API</span>
+                        <span class="text-[10px] font-mono bg-sky-100 text-sky-800 px-2 py-0.5 rounded">localhost:9000</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Türkiye'deki restoranların en çok kullandığı <b>SambaPOS V5</b>'in kendi içinde yerel <button type="button" class="term-badge" onclick="openTerm('GRAPHQL')">GraphQL</button> API'si vardır. SambaPOS'un bulut entegrasyonuna aylık kira ödemek yerine, kasadaki mini köprümüz doğrudan <code>http://localhost:9000/api/graphql</code> adresine <code>addTicket</code> komutu göndererek siparişi doğrudan SambaPOS'un kendi adisyon ekranına düşürür!
+                    </p>
+                `,
+                stage5ContextHtml: `
+                    <div class="font-extrabold text-sky-800 mb-0.5"><i class="fa-solid fa-network-wired mr-1"></i>Yerel GraphQL Modu:</div>
+                    <div><code>addTicket</code> mutasyonu ile adisyon doğrudan SambaPOS içine resmi kayıt olarak düştü!</div>
+                `
+            },
+            '3': {
+                badge: 'Yöntem 3: Port 9100 Yazıcı',
+                shortName: 'Doğrudan Termal Yazıcı (Port 9100)',
+                borderColor: 'border-teal-500',
+                sambaHeaderText: 'LAN Yazıcı Köprüsü: Port 9100',
+                html: `
+                    <div class="text-xs font-extrabold text-teal-800 flex items-center justify-between">
+                        <span><i class="fa-solid fa-print mr-1"></i> Yöntem 3: Doğrudan Termal Yazıcı Köprüsü</span>
+                        <span class="text-[10px] font-mono bg-teal-100 text-teal-800 px-2 py-0.5 rounded">LAN Port 9100</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Restoranın kasa yazılımı tamamen şifreli/kapalı olsa bile, mutfaktaki ve kasadaki 80mm fiş yazıcısı yerel ağda <button type="button" class="term-badge" onclick="openTerm('PORT_9100')">Port 9100</button> kapısını açık tutar. Sipariş geldiği an <button type="button" class="term-badge" onclick="openTerm('ESCPOS')">ESC/POS</button> diliyle doğrudan fişi çıkartırız.
+                    </p>
+                `,
+                stage5ContextHtml: `
+                    <div class="font-extrabold text-teal-800 mb-0.5"><i class="fa-solid fa-print mr-1"></i>Port 9100 Modu:</div>
+                    <div>POS yazılımına dokunulmadan doğrudan ağ yazıcısına <button type="button" class="term-badge" onclick="openTerm('ESCPOS')">ESC/POS</button> fiş gönderilir.</div>
+                `
+            },
+            '4': {
+                badge: 'Yöntem 4: MS SQL Enjeksiyon',
+                shortName: 'MS SQL dbo.Tickets Enjeksiyonu',
+                borderColor: 'border-purple-500',
+                sambaHeaderText: 'SQL Express: dbo.Tickets Bağlı',
+                html: `
+                    <div class="text-xs font-extrabold text-purple-800 flex items-center justify-between">
+                        <span><i class="fa-solid fa-database mr-1"></i> Yöntem 4: Yerel Veritabanı (MS SQL) Enjeksiyonu</span>
+                        <span class="text-[10px] font-mono bg-purple-100 text-purple-800 px-2 py-0.5 rounded">dbo.Tickets</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        API'si kapalı yerel POS programlarında tüm adisyonlar kasa bilgisayarındaki <button type="button" class="term-badge" onclick="openTerm('MSSQL')">MS SQL</button> Express veritabanında durur. Mini servisimiz doğrudan SQL içindeki <code>dbo.Tickets</code> ve <code>dbo.Orders</code> tablolarına <code>INSERT INTO</code> ile siparişi yazar.
+                    </p>
+                `,
+                stage5ContextHtml: `
+                    <div class="font-extrabold text-purple-800 mb-0.5"><i class="fa-solid fa-database mr-1"></i>MS SQL Tablo Modu:</div>
+                    <div><code>dbo.Tickets</code> tablosuna kayıt eklendi, SambaPOS ekranında adisyon belirdi.</div>
+                `
+            },
+            '5': {
+                badge: 'Yöntem 5: Caller ID COM3',
+                shortName: 'Caller ID Telefon Çalıyor Taklidi',
+                borderColor: 'border-pink-500',
+                sambaHeaderText: 'Caller ID Modülü: COM3 Aktif',
+                html: `
+                    <div class="text-xs font-extrabold text-pink-800 flex items-center justify-between">
+                        <span><i class="fa-solid fa-phone-volume mr-1"></i> Yöntem 5: Caller ID (Sanal COM Port) Emülasyonu</span>
+                        <span class="text-[10px] font-mono bg-pink-100 text-pink-800 px-2 py-0.5 rounded">Sanal COM3</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        SambaPOS ve eski kasa programlarında sabit telefon çaldığında sağ altta arayan müşterinin pop-up'ını açan Caller ID özelliği vardır. Bilgisayarda sanal seri port (<button type="button" class="term-badge" onclick="openTerm('CALLER_ID')">Caller ID COM</button>) açıp <i>"0532 190 3939 Arıyor"</i> sinyali göndererek SambaPOS'ta müşteri adisyonunu otomatik açtırırız!
+                    </p>
+                `,
+                stage5ContextHtml: `
+                    <div class="font-extrabold text-pink-800 mb-0.5"><i class="fa-solid fa-phone-volume mr-1"></i>Caller ID COM3 Modu:</div>
+                    <div>Alt barda telefon çalıyor pop-up'ı tetiklendi, kasiyer tıklayınca adisyon açıldı!</div>
+                `
+            },
+            '6': {
+                badge: 'Yöntem 6: DOM & RPA',
+                shortName: 'Chrome DOM Injection & RPA',
+                borderColor: 'border-amber-500',
+                sambaHeaderText: 'Chrome DOM + RPA Robotu: Hazır',
+                html: `
+                    <div class="text-xs font-extrabold text-amber-800 flex items-center justify-between">
+                        <span><i class="fa-brands fa-chrome mr-1"></i> Yöntem 6: Chrome Eklentisi (DOM Injection) & RPA</span>
+                        <span class="text-[10px] font-mono bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Web POS'lar İçin</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        Bulut/Web tabanlı POS'larda tarayıcıya kendi eklentimizi (<button type="button" class="term-badge" onclick="openTerm('DOM_INJECTION')">DOM Injection</button>) kurarız. Eklentimiz POS ekranının üstüne bildirim barımızı gömer ve <button type="button" class="term-badge" onclick="openTerm('RPA')">RPA</button> robotu ile ekrandaki yemek butonlarına otomatik tıklatır!
+                    </p>
+                `,
+                stage5ContextHtml: `
+                    <div class="font-extrabold text-amber-800 mb-0.5"><i class="fa-solid fa-robot mr-1"></i>DOM & RPA Modu:</div>
+                    <div>Üstteki sarı barda <b>"RPA İle Otomatik Tuşla"</b> butonuna basarak robotun sağdaki menü tuşlarına nasıl bastığını izle!</div>
+                `
+            },
+            '7': {
+                badge: 'Yöntem 7: Resmi Bulut API',
+                shortName: 'Resmi Bulut POS API (Ücretli)',
+                borderColor: 'border-red-500',
+                sambaHeaderText: 'Resmi Bulut API (Lisanslı)',
+                html: `
+                    <div class="text-xs font-extrabold text-red-800 flex items-center justify-between">
+                        <span><i class="fa-solid fa-lock mr-1"></i> Yöntem 7: Resmi Bulut API & Kanal Yöneticisi</span>
+                        <span class="text-[10px] font-mono bg-red-100 text-red-800 px-2 py-0.5 rounded">API Paywall</span>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed">
+                        POS yazılım şirketine her restoran başına aylık düzenli <button type="button" class="term-badge" onclick="openTerm('API_PAYWALL')">API Paywall</button> (entegrasyon kirası) ödeyerek resmi webhook bağlamaktır.
+                    </p>
+                `,
+                stage5ContextHtml: `
+                    <div class="font-extrabold text-red-800 mb-0.5"><i class="fa-solid fa-cloud mr-1"></i>Resmi Bulut API:</div>
+                    <div>Aylık entegrasyon lisansı ile buluttan POS'a aktarıldı.</div>
+                `
+            }
+        };
+
+        function selectBridgeMethod(m, silent = false) {
+            bridgeMethod = String(m);
+            const data = integrationMethodsData[bridgeMethod] || integrationMethodsData['1'];
+
+            for (let i = 1; i <= 7; i++) {
+                const btn = document.getElementById(`methodBtn-${i}`);
+                if (!btn) continue;
+                if (String(i) === bridgeMethod) {
+                    btn.className = 'w-full p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/70 text-left transition active:scale-[0.99] shadow-sm';
+                } else {
+                    btn.className = 'w-full p-3 rounded-2xl border border-slate-200 bg-white text-left transition active:scale-[0.99] shadow-sm';
+                }
+            }
+
+            const box = document.getElementById('methodArchitectureBox');
+            box.className = `p-4 rounded-3xl bg-white border-2 ${data.borderColor} space-y-3 shadow-md`;
+            box.innerHTML = data.html;
+
+            const dispatchBtnText = document.getElementById('stage4DispatchBtnText');
+            if (dispatchBtnText) {
+                dispatchBtnText.textContent = `${data.shortName} İle SambaPOS Ekranında Canlı Gör (Aşama 5)`;
+            }
+
+            if (!silent) playSfx('tap');
+        }
+
+        function dispatchOrderToRestaurantStage() {
+            stepCompleted[3] = true;
+            const data = integrationMethodsData[bridgeMethod] || integrationMethodsData['1'];
+            posOrderArrived = false; // First show normal cashier screen so user can compare!
+            appendLog('RESTORAN KÖPRÜSÜ', `[${data.badge}] seçildi. Şimdi 5. Aşamada "Şimdi Sipariş Gönder" butonuna basarak siparişin geliş anını test edebilirsin.`, 'text-orange-600');
+            goToStep(5);
+        }
+
+        // --- 11. STAGE 5 LOGIC: AUTHENTIC SAMBAPOS SCREEN, THERMAL PRINTER & KDS ---
+        function setPosSimulationState(arrived) {
+            posOrderArrived = arrived;
+            const idleBtn = document.getElementById('btnPosStateIdle');
+            const incBtn = document.getElementById('btnPosStateIncoming');
+            const stateBadge = document.getElementById('posSimStateBadge');
+            const channelPill = document.getElementById('channelPillOurApp');
+            const channelCount = document.getElementById('channelCountOurApp');
+            const deliveryTabCount = document.getElementById('sambaDeliveryTabCount');
+
+            if (!arrived) {
+                playSfx('tap');
+                idleBtn.className = 'py-2.5 px-2.5 rounded-xl border-2 border-slate-800 bg-slate-800 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95';
+                incBtn.className = 'py-2.5 px-2.5 rounded-xl border-2 border-orange-600 bg-orange-600 text-white font-extrabold text-[11px] shadow-md cta-pulse flex items-center justify-center gap-1.5 transition active:scale-95';
+                stateBadge.textContent = 'DURUM: NORMAL KASA (BEKLEMEDE)';
+                stateBadge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700';
+
+                channelPill.className = 'px-1.5 py-1 rounded bg-slate-100 border border-slate-300 text-slate-600 flex items-center justify-between transition-all';
+                channelCount.textContent = '0';
+                channelCount.className = 'font-mono bg-slate-500 text-white px-1 rounded text-[8px]';
+                deliveryTabCount.textContent = '0';
+
+                // Show idle empty ticket, hide active ticket & overlays
+                document.getElementById('sambaTicketIdleView').classList.remove('hidden');
+                document.getElementById('sambaTicketActiveView').classList.add('hidden');
+                document.getElementById('sambaAlwaysOnTopOverlay').classList.add('hidden');
+                document.getElementById('sambaCallerIdPopup').classList.add('hidden');
+                document.getElementById('sambaDomInjectionBar').classList.add('hidden');
+                document.getElementById('btnApproveAndPrint').classList.remove('cta-pulse-emerald');
+            } else {
+                playSfx('alarm');
+                incBtn.className = 'py-2.5 px-2.5 rounded-xl border-2 border-emerald-700 bg-emerald-600 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95';
+                idleBtn.className = 'py-2.5 px-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95';
+                stateBadge.textContent = '🔔 YENİ SİPARİŞ #1042 GELDİ!';
+                stateBadge.className = 'text-[10px] font-mono font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-400';
+
+                channelPill.className = 'px-1.5 py-1 rounded bg-emerald-100 border-2 border-emerald-600 text-emerald-950 flex items-center justify-between transition-all shadow-sm';
+                channelCount.textContent = '1';
+                channelCount.className = 'font-mono bg-emerald-600 text-white px-1 rounded text-[8px] animate-bounce';
+                deliveryTabCount.textContent = '1';
+
+                const topOverlay = document.getElementById('sambaAlwaysOnTopOverlay');
+                const callerPopup = document.getElementById('sambaCallerIdPopup');
+                const domBar = document.getElementById('sambaDomInjectionBar');
+                topOverlay.classList.add('hidden');
+                callerPopup.classList.add('hidden');
+                domBar.classList.add('hidden');
+
+                if (bridgeMethod === '1') {
+                    // Method 1: Keep background SambaPOS idle so user sees Always-on-Top window popping over normal POS!
+                    document.getElementById('sambaTicketIdleView').classList.remove('hidden');
+                    document.getElementById('sambaTicketActiveView').classList.add('hidden');
+                    topOverlay.classList.remove('hidden');
+                    appendLog('ALWAYS-ON-TOP AJANI', 'SambaPOS normal ekranında dururken en üst katmanda (Topmost=True) bizim opak sipariş penceremiz açıldı!', 'text-emerald-700');
+                } else if (bridgeMethod === '5') {
+                    // Method 5: Keep idle until cashier clicks Caller ID popup
+                    document.getElementById('sambaTicketIdleView').classList.remove('hidden');
+                    document.getElementById('sambaTicketActiveView').classList.add('hidden');
+                    callerPopup.classList.remove('hidden');
+                    appendLog('CALLER ID COM3', 'SambaPOS alt barında "Hat 1 Arıyor: Ahmet Yılmaz" pop-up penceresi tetiklendi!', 'text-pink-700');
+                } else if (bridgeMethod === '6') {
+                    // Method 6: Show Chrome DOM Injection Bar first; RPA button will click items into ticket!
+                    document.getElementById('sambaTicketIdleView').classList.remove('hidden');
+                    document.getElementById('sambaTicketActiveView').classList.add('hidden');
+                    domBar.classList.remove('hidden');
+                    appendLog('CHROME DOM & RPA', 'Üstte sarı bildirim barı açıldı. "RPA İle Otomatik Tuşla" butonuna basarak robotun tuşlara basmasını izle!', 'text-amber-700');
+                } else if (bridgeMethod === '3') {
+                    // Method 3: Direct Port 9100 Printer bypasses POS screen and prints immediately!
+                    document.getElementById('sambaTicketIdleView').classList.remove('hidden');
+                    document.getElementById('sambaTicketActiveView').classList.add('hidden');
+                    appendLog('PORT 9100 DOĞRUDAN YAZICI', 'Kasa ekranına hiç dokunulmadan doğrudan termal yazıcıdan fiş çıkarılıyor!', 'text-teal-700');
+                    setTimeout(() => approveAndPrintThermalReceipt(), 350);
+                } else {
+                    // Methods 2 (GraphQL), 4 (MS SQL), 7 (Cloud API): Ticket directly populates inside SambaPOS!
+                    document.getElementById('sambaTicketIdleView').classList.add('hidden');
+                    document.getElementById('sambaTicketActiveView').classList.remove('hidden');
+                    document.getElementById('btnApproveAndPrint').classList.add('cta-pulse-emerald');
+                    appendLog('SAMBAPOS ADİSYON', 'Sipariş #1042 doğrudan SambaPOS Adisyon listesine düştü!', 'text-sky-700');
+                }
+            }
+        }
+
+        function minimizeAlwaysOnTopToInspectPos() {
+            playSfx('tap');
+            document.getElementById('sambaAlwaysOnTopOverlay').classList.add('hidden');
+            document.getElementById('sambaTicketIdleView').classList.add('hidden');
+            document.getElementById('sambaTicketActiveView').classList.remove('hidden');
+            document.getElementById('btnApproveAndPrint').classList.add('cta-pulse-emerald');
+            appendLog('ALWAYS-ON-TOP -> SAMBAPOS', 'Yüzen penceredeki sipariş SambaPOS adisyon ekranına da aktarıldı.', 'text-emerald-700');
+        }
+
+        function acceptFromAlwaysOnTopWindow() {
+            document.getElementById('sambaAlwaysOnTopOverlay').classList.add('hidden');
+            document.getElementById('sambaTicketIdleView').classList.add('hidden');
+            document.getElementById('sambaTicketActiveView').classList.remove('hidden');
+            approveAndPrintThermalReceipt();
+        }
+
+        function acceptFromCallerIdPopup() {
+            playSfx('tap');
+            document.getElementById('sambaCallerIdPopup').classList.add('hidden');
+            document.getElementById('sambaTicketIdleView').classList.add('hidden');
+            document.getElementById('sambaTicketActiveView').classList.remove('hidden');
+            document.getElementById('btnApproveAndPrint').classList.add('cta-pulse-emerald');
+            appendLog('CALLER ID -> ADİSYON AÇILDI', 'Kasiyer Caller ID bildirimine tıkladı ve Ahmet Yılmaz adisyonu otomatik dolduruldu!', 'text-pink-700');
+        }
+
+        function switchSambaSubView(view) {
+            playSfx('tap');
+            const posView = document.getElementById('sambaWorkspacePos');
+            const delView = document.getElementById('sambaWorkspaceDelivery');
+            const posBtn = document.getElementById('sambaTabPosBtn');
+            const delBtn = document.getElementById('sambaTabDeliveryBtn');
+
+            if (view === 'POS') {
+                posView.classList.remove('hidden');
+                delView.classList.add('hidden');
+                posBtn.className = 'px-2 py-1 rounded bg-[#2563eb] text-white shadow-sm flex items-center gap-1';
+                delBtn.className = 'px-2 py-1 rounded bg-white text-slate-700 border border-slate-300 flex items-center gap-1';
+            } else {
+                posView.classList.add('hidden');
+                delView.classList.remove('hidden');
+                delBtn.className = 'px-2 py-1 rounded bg-[#2563eb] text-white shadow-sm flex items-center gap-1';
+                posBtn.className = 'px-2 py-1 rounded bg-white text-slate-700 border border-slate-300 flex items-center gap-1';
+            }
+        }
+
+        function sambaQuickAddItem(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            if (!item) return;
+            item.qty += 1;
+            playSfx('tap');
+            document.getElementById('sambaTicketIdleView').classList.add('hidden');
+            document.getElementById('sambaTicketActiveView').classList.remove('hidden');
+            renderMobileMenu();
+            syncStage5Data(true);
+            appendLog('SAMBAPOS KASA', `Kasiyer SambaPOS ekranından +1 ${item.name} ekledi.`, 'text-sky-700');
+        }
+
+        function runRpaAutoClickSimulation() {
+            playSfx('tap');
+            document.getElementById('sambaTicketIdleView').classList.add('hidden');
+            document.getElementById('sambaTicketActiveView').classList.remove('hidden');
+            const ids = [1, 2, 3];
+            ids.forEach((id, idx) => {
+                setTimeout(() => {
+                    const tile = document.getElementById(`sambaTile-${id}`);
+                    if (tile) {
+                        tile.classList.add('ring-4', 'ring-amber-400', 'scale-95');
+                        playSfx('tap');
+                        setTimeout(() => tile.classList.remove('ring-4', 'ring-amber-400', 'scale-95'), 300);
+                    }
+                }, idx * 320);
+            });
+            setTimeout(() => {
+                document.getElementById('btnApproveAndPrint').classList.add('cta-pulse-emerald');
+            }, 1000);
+            appendLog('RPA ROBOTU', 'RPA betiği SambaPOS ürün butonlarına otomatik tıklayarak boş adisyonu doldurdu!', 'text-amber-700');
+        }
+
+        function syncStage5Data(keepCurrentArrivalState = false) {
+            const total = getCartTotal();
+            const note = document.getElementById('orderNoteInput').value || 'Not yok';
+            const activeItems = menuItems.filter(i => i.qty > 0);
+            const data = integrationMethodsData[bridgeMethod] || integrationMethodsData['1'];
+
+            document.getElementById('stage5BridgeBadge').textContent = data.badge;
+            document.getElementById('sambaHeaderModeBadge').textContent = data.sambaHeaderText;
+            document.getElementById('stage5MethodScreenContext').innerHTML = data.stage5ContextHtml;
+
+            // Populate Always-on-Top Floating Window Content
+            const aotTotal = document.getElementById('alwaysOnTopTotalBadge');
+            if (aotTotal) aotTotal.textContent = `${total} TL (${paymentMode === 'ONLINE' ? 'ÖDENDİ' : 'KAPIDA'})`;
+            const aotList = document.getElementById('alwaysOnTopItemsList');
+            if (aotList) {
+                aotList.innerHTML = activeItems.map(i => `
+                    <div class="flex justify-between">
+                        <span><b>${i.qty}x</b> ${i.name}</span>
+                        <span>${(i.price * i.qty).toFixed(2)} TL</span>
+                    </div>
+                `).join('');
+            }
+
+            if (!keepCurrentArrivalState) {
+                setPosSimulationState(posOrderArrived);
+            }
+
+            document.getElementById('stage5TotalText').textContent = `${total.toFixed(2)} TL`;
+            document.getElementById('stage5NoteText').textContent = note;
+
+            const pill = document.getElementById('stage5PaymentPill');
+            if (paymentMode === 'ONLINE') {
+                pill.textContent = 'ONLINE ÖDENDİ (Tahsilat Yok)';
+                pill.className = 'text-[10px] font-extrabold text-emerald-400';
+            } else {
+                pill.textContent = `KAPIDA TAHSİL EDİLECEK (${total.toFixed(2)} TL)`;
+                pill.className = 'text-[10px] font-extrabold text-amber-400';
+            }
+
+            // Render SambaPOS Ticket Lines
+            document.getElementById('sambaTicketLinesContainer').innerHTML = activeItems.map(i => `
+                <div class="py-1 flex items-center justify-between text-slate-800">
+                    <div>
+                        <span class="font-extrabold text-blue-700">${i.qty}.00</span>
+                        <span class="font-semibold ml-1">${i.name}</span>
+                    </div>
+                    <span class="font-bold">${(i.price * i.qty).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            // Sync Thermal Paper Receipt
+            document.getElementById('receiptPaperItems').innerHTML = activeItems.map(i => `
+                <div class="flex justify-between text-[10px]">
+                    <span>${i.qty} AD. ${i.name.toUpperCase()}</span>
+                    <span class="font-bold">${(i.price * i.qty).toFixed(2)}</span>
+                </div>
+            `).join('');
+            document.getElementById('receiptPaperNote').textContent = note;
+            document.getElementById('receiptPaperTotal').textContent = `${total.toFixed(2)} TL`;
+
+            const stamp = document.getElementById('receiptPaperStamp');
+            if (paymentMode === 'ONLINE') {
+                stamp.innerHTML = `*** ONLINE ÖDENDİ ***<br><span class="text-[9px] font-bold">MÜŞTERİDEN ÜCRET TAHSİL ETMEYİNİZ!</span>`;
+                stamp.className = 'border-2 border-slate-900 text-center py-1.5 px-2 font-extrabold text-[11px] mb-2.5 bg-emerald-100/80';
+            } else {
+                stamp.innerHTML = `*** KAPIDA TAHSİL EDİLECEK ***<br><span class="text-[9px] font-bold">KURYE ${total.toFixed(2)} TL TAHSİL EDECEKTİR!</span>`;
+                stamp.className = 'border-2 border-slate-900 text-center py-1.5 px-2 font-extrabold text-[11px] mb-2.5 bg-amber-100/80';
+            }
+
+            // Render KDS Checklist Items
+            document.getElementById('kdsChecklistItems').innerHTML = activeItems.map(i => `
+                <label class="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 border border-amber-200 cursor-pointer">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" checked class="w-4 h-4 accent-emerald-600 rounded">
+                        <span class="font-bold text-slate-900">${i.qty}x ${i.name}</span>
+                    </div>
+                    <span class="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">PAKETLENDİ</span>
+                </label>
+            `).join('');
+        }
+
+        function approveAndPrintThermalReceipt() {
+            playSfx('printer');
+
+            // Hide overlays if open
+            document.getElementById('sambaAlwaysOnTopOverlay').classList.add('hidden');
+            document.getElementById('sambaCallerIdPopup').classList.add('hidden');
+
+            // Update SambaPOS Ticket Status Pill
+            const statusPill = document.getElementById('sambaTicketStatusPill');
+            statusPill.textContent = 'MUTFAKTA / FİŞ BASILDI';
+            statusPill.className = 'text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-600 text-white';
+
+            const delStatus = document.getElementById('sambaDeliveryCardStatus');
+            if (delStatus) {
+                delStatus.textContent = 'Fiş Basıldı • Mutfak Hazırlıyor';
+                delStatus.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-900 inline-block';
+            }
+
+            const btn = document.getElementById('btnApproveAndPrint');
+            btn.classList.remove('cta-pulse-emerald');
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Fiş Yazdırıldı (Tekrar Yazdır)</span>';
+
+            document.getElementById('printerWaitingNotice').classList.add('hidden');
+            const paper = document.getElementById('thermalReceiptPaper');
+            paper.style.maxHeight = '720px';
+            paper.style.opacity = '1';
+
+            document.getElementById('kdsReadyBox').classList.remove('hidden');
+            appendLog('SAMBAPOS -> YAZICI (PORT 9100)', 'Adisyon #1042 onaylandı. ESC/POS komutuyla 80mm sipariş fişi ve QR Handshake barkodu yazdırıldı.', 'text-emerald-700');
+
+            setTimeout(() => {
+                paper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 350);
+        }
+
+        function triggerKitchenReadyGoToCourier() {
+            stepCompleted[4] = true;
+            appendLog('MUTFAK KDS -> SEVKİYAT (DMS)', 'Usta "Paket Hazır" butonuna bastı. Paket Kurye Çağırma ekranına düştü.', 'text-purple-700');
+            goToStep(6);
+            setTimeout(() => playSfx('alarm'), 250);
+        }
+
+        // --- 12. STAGE 6 LOGIC: COURIER DISPATCH (DMS) & COURIER SMARTPHONE APP ---
+        function syncStage6Data() {
+            const total = getCartTotal();
+            const reminder = document.getElementById('courierPaymentReminder');
+            const dispatchPay = document.getElementById('dispatchPayTypeLabel');
+            if (paymentMode === 'ONLINE') {
+                reminder.textContent = 'ONLINE ÖDENDİ (Tahsilat Yok)';
+                reminder.className = 'text-emerald-700 font-extrabold';
+                if (dispatchPay) {
+                    dispatchPay.textContent = 'ONLINE ÖDENDİ';
+                    dispatchPay.className = 'text-emerald-700';
+                }
+            } else {
+                reminder.textContent = `KAPIDA ${total} TL ALINACAK`;
+                reminder.className = 'text-amber-700 font-extrabold';
+                if (dispatchPay) {
+                    dispatchPay.textContent = `KAPIDA ${total} TL`;
+                    dispatchPay.className = 'text-amber-700';
+                }
+            }
+        }
+
+        function selectCourierCandidate(id) {
+            selectedCourierId = id;
+            playSfx('tap');
+            const b1 = document.getElementById('courierSelectBtn-1');
+            const b2 = document.getElementById('courierSelectBtn-2');
+            const activeName = document.getElementById('courierAppActiveName');
+
+            if (id === 1) {
+                b1.className = 'p-2.5 rounded-xl border-2 border-purple-600 bg-purple-50/70 text-left transition';
+                b2.className = 'p-2.5 rounded-xl border border-slate-200 bg-white text-left transition';
+                activeName.textContent = '● Burak K. (39 AB 104 - Havuz Kuryesi)';
+            } else {
+                b2.className = 'p-2.5 rounded-xl border-2 border-purple-600 bg-purple-50/70 text-left transition';
+                b1.className = 'p-2.5 rounded-xl border border-slate-200 bg-white text-left transition';
+                activeName.textContent = '● Emre T. (Restoran Kuryesi)';
+            }
+        }
+
+        function dispatchStep0CallCourier() {
+            playSfx('alarm');
+            const callBtn = document.getElementById('btnDispatchCallCourier');
+            callBtn.classList.remove('cta-pulse');
+            callBtn.className = 'w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition';
+            callBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Kuryeye Bildirim Gönderildi! (Aşağıdaki Telefondan Kabul Et)</span>';
+
+            document.getElementById('courierIncomingRingBanner').classList.remove('hidden');
+            document.getElementById('btnCourierAccept').classList.add('cta-pulse');
+            document.getElementById('dmsStatusPill').textContent = 'KURYE ÇAĞRILDI';
+            document.getElementById('courierTelemetryText').textContent = 'Durum: Kurye Telefonu Çalıyor...';
+
+            const courierName = selectedCourierId === 1 ? 'Burak K. (Havuz)' : 'Emre T. (Restoran)';
+            appendLog('DMS SEVKİYAT EKRANI', `Sevkiyat panelinden ${courierName} seçildi ve Fiş #1042 için çağrı gönderildi.`, 'text-purple-700');
+        }
+
+        function courierStep1Accept() {
+            playSfx('tap');
+            document.getElementById('courierIncomingRingBanner').classList.add('hidden');
+
+            const b1 = document.getElementById('btnCourierAccept');
+            b1.classList.remove('cta-pulse');
+            b1.classList.add('opacity-50', 'pointer-events-none');
+            b1.innerHTML = '<i class="fa-solid fa-check"></i> 1. Çağrı Kabul Edildi & Restorana Gelindi';
+
+            const b2 = document.getElementById('btnCourierScanQr');
+            b2.disabled = false;
+            b2.classList.add('cta-pulse-blue');
+
+            document.getElementById('dmsStatusPill').textContent = 'KURYE TEZGAHTA';
+            document.getElementById('courierTelemetryText').textContent = 'Durum: Fişteki QR Barkodu Okutması Bekleniyor';
+            appendLog('KURYE APP', 'Kurye görevi kabul etti ve paketi teslim almak için restoran tezgahına geldi.', 'text-purple-700');
+        }
+
+        function courierStep2ScanQr() {
+            playSfx('scan');
+            const scanner = document.getElementById('qrCameraScannerBox');
+            scanner.classList.remove('hidden');
+
+            const b2 = document.getElementById('btnCourierScanQr');
+            b2.classList.remove('cta-pulse-blue');
+            b2.classList.add('opacity-50', 'pointer-events-none');
+            b2.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Termal Fişteki QR Okunuyor...';
+
+            setTimeout(() => {
+                playSfx('success');
+                scanner.classList.add('hidden');
+                b2.innerHTML = '<i class="fa-solid fa-check"></i> 2. QR Handshake Başarılı & Yola Çıktı';
+
+                const b3 = document.getElementById('btnCourierDeliver');
+                b3.disabled = false;
+                b3.classList.add('cta-pulse-emerald');
+
+                document.getElementById('dmsStatusPill').textContent = 'TESLİMAT YOLUNDA';
+                document.getElementById('dmsStatusPill').className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-300';
+                document.getElementById('courierRouteBar').style.width = '68%';
+                document.getElementById('courierMotoIcon').style.left = '62%';
+                document.getElementById('courierTelemetryText').textContent = 'GPS: Kurtuluş Mah. Yönünde İlerliyor';
+                document.getElementById('courierEtaBadge').textContent = 'Varış: ~3 dk';
+
+                appendLog('QR HANDSHAKE', 'Kurye termal fişteki QR kodu kamerayla okuttu! Paket zimmetlendi, müşteriye canlı harita açıldı.', 'text-sky-700');
+            }, 1300);
+        }
+
+        function courierStep3Deliver() {
+            playSfx('success');
+            const b3 = document.getElementById('btnCourierDeliver');
+            b3.classList.remove('cta-pulse-emerald');
+            b3.classList.add('opacity-50', 'pointer-events-none');
+            b3.innerHTML = '<i class="fa-solid fa-check-double"></i> 3. Müşteriye Teslim Edildi!';
+
+            document.getElementById('dmsStatusPill').textContent = 'TESLİM EDİLDİ';
+            document.getElementById('dmsStatusPill').className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 text-white';
+            document.getElementById('courierRouteBar').style.width = '100%';
+            document.getElementById('courierMotoIcon').style.left = '88%';
+            document.getElementById('courierTelemetryText').textContent = 'GPS: Müşteri Kapısında Teslimat Tamamlandı';
+            document.getElementById('courierEtaBadge').textContent = 'Teslim Edildi';
+
+            document.getElementById('finalSuccessCard').classList.remove('hidden');
+            stepCompleted[5] = true;
+            renderStepDots();
+
+            appendLog('ESCROW & BİTİŞ', 'Teslimat onaylandı! Escrow havuzundaki restoran hak edişi serbest bırakıldı.', 'text-emerald-700');
+        }
+
+        // --- 13. FULL RESET ---
+        function resetSimulation() {
+            for (let i = 0; i < 6; i++) stepCompleted[i] = false;
+            posOrderArrived = false;
+
+            // Stage 1 reset
+            document.getElementById('smsDropNotification').classList.add('hidden');
+            document.getElementById('authViewPhone').classList.remove('hidden');
+            document.getElementById('authViewOtp').classList.add('hidden');
+            document.getElementById('authViewSuccess').classList.add('hidden');
+
+            // Stage 3 reset
+            document.getElementById('stage3ProceedBox').classList.add('hidden');
+            document.getElementById('flowCardFinancial').classList.remove('ring-2', 'ring-emerald-500');
+            document.getElementById('flowCardOperational').classList.remove('ring-2', 'ring-sky-500');
+
+            // Stage 5 reset
+            document.getElementById('printerWaitingNotice').classList.remove('hidden');
+            const paper = document.getElementById('thermalReceiptPaper');
+            paper.style.maxHeight = '0px';
+            paper.style.opacity = '0';
+            document.getElementById('kdsReadyBox').classList.add('hidden');
+
+            const statusPill = document.getElementById('sambaTicketStatusPill');
+            statusPill.textContent = 'YENİ ONLINE SİPARİŞ';
+            statusPill.className = 'text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-orange-500 text-white';
+
+            const printBtn = document.getElementById('btnApproveAndPrint');
+            printBtn.classList.add('cta-pulse-emerald');
+            printBtn.innerHTML = '<i class="fa-solid fa-print"></i> <span id="btnApproveAndPrintText">Adisyonu Onayla & Fiş Yazdır</span>';
+
+            // Stage 6 reset
+            const callBtn = document.getElementById('btnDispatchCallCourier');
+            callBtn.className = 'w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-purple-600 active:bg-purple-700 text-white font-extrabold text-xs shadow-md cta-pulse flex items-center justify-center gap-2 transition';
+            callBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span id="btnDispatchCallCourierText">Seçili Kuryeye Çağrı Gönder & Paketi Ata</span>';
+
+            document.getElementById('courierIncomingRingBanner').classList.add('hidden');
+
+            const b1 = document.getElementById('btnCourierAccept');
+            b1.className = 'w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-purple-600 active:bg-purple-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition';
+            b1.innerHTML = '<i class="fa-solid fa-bell-concierge"></i><span>1. Kurye: Çağrıyı Kabul Et & Restorana Gel</span>';
+
+            const b2 = document.getElementById('btnCourierScanQr');
+            b2.disabled = true;
+            b2.className = 'w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-sky-600 active:bg-sky-700 disabled:opacity-35 disabled:pointer-events-none text-white font-bold text-xs flex items-center justify-center gap-2 transition';
+            b2.innerHTML = '<i class="fa-solid fa-qrcode"></i><span>2. Fişteki QR Kodu Okut & Paketi Teslim Al</span>';
+
+            const b3 = document.getElementById('btnCourierDeliver');
+            b3.disabled = true;
+            b3.className = 'w-full min-h-[46px] py-2.5 px-3 rounded-xl bg-emerald-600 active:bg-emerald-700 disabled:opacity-35 disabled:pointer-events-none text-white font-bold text-xs flex items-center justify-center gap-2 transition';
+            b3.innerHTML = '<i class="fa-solid fa-flag-checkered"></i><span>3. Müşteriye Teslim Edildi (Döngüyü Tamamla)</span>';
+
+            document.getElementById('qrCameraScannerBox').classList.add('hidden');
+            document.getElementById('finalSuccessCard').classList.add('hidden');
+            document.getElementById('courierRouteBar').style.width = '12%';
+            document.getElementById('courierMotoIcon').style.left = '8%';
+
+            appendLog('SİSTEM', 'Simülasyon sıfırlandı. 1. Aşamadan tekrar başlayabilirsiniz.', 'text-orange-600');
+            goToStep(1);
+        }
+
+        // --- INIT ---
+        window.onload = function() {
+            renderMobileMenu();
+            goToStep(1);
+            appendLog('AYDINLIK TEMA & SAMBAPOS HAZIR', 'Tüm ekranlar aydınlık temaya geçirildi, SambaPOS V5 ve Sevkiyat (DMS) ekranları eklendi.', 'text-sky-700');
+        };
+    </script>
+</body>
+</html>
